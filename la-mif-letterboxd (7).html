@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Mif Letterboxd</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#4b5a6a;
+    --card:#f5f6f7;
+    --ink:#2b323a;
+    --muted:#6b7480;
+    --line:#dfe2e6;
+    --accent:#5c7a8a;
+    --accent-dark:#46606d;
+    --ok:#3e7a52;
+    --bad:#a44f42;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:48px 16px 60px;
+  }
+  header{ text-align:center; margin-bottom:28px; }
+  h1{
+    font-family:'Playfair Display', serif;
+    font-weight:700;
+    font-size:32px;
+    color:#f5f6f7;
+    margin:0;
+    letter-spacing:0.01em;
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+  }
+  header p{ margin:8px 0 0; font-size:13px; color:#c3cbd2; font-weight:400; }
+
+  .card{
+    width:100%;
+    max-width:460px;
+    background:var(--card);
+    border-radius:10px;
+    box-shadow:0 12px 30px rgba(0,0,0,0.22);
+    padding:28px 26px;
+  }
+  .screen{ display:none; width:100%; max-width:460px; }
+  .screen.active{ display:flex; flex-direction:column; align-items:center; }
+
+  .field-label{
+    align-self:flex-start;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  input[type=text], input[type=password]{
+    width:100%;
+    font-family:'Inter', sans-serif;
+    font-size:15px;
+    padding:11px 13px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:#fff;
+    color:var(--ink);
+    margin-bottom:14px;
+  }
+  input:focus{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(92,122,138,0.15);
+  }
+  input:disabled{ opacity:0.55; }
+
+  button{
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:13px;
+    border:none;
+    border-radius:6px;
+    padding:11px 18px;
+    cursor:pointer;
+    transition:filter .15s ease;
+  }
+  .btn-primary{ background:var(--accent); color:#fff; width:100%; }
+  .btn-primary:hover{ filter:brightness(1.08); }
+  .btn-primary:disabled{ opacity:0.5; cursor:not-allowed; }
+  .btn-secondary{
+    background:none; border:1px solid var(--line); color:var(--ink); width:100%;
+  }
+  .btn-secondary:hover{ border-color:var(--accent); color:var(--accent-dark); }
+  .btn-link{
+    background:none; border:none; color:var(--muted); font-weight:500;
+    padding:6px 0; text-decoration:underline;
+  }
+  .stack{ display:flex; flex-direction:column; gap:10px; width:100%; }
+  .row2{ display:flex; gap:10px; width:100%; }
+  .row2 > *{ flex:1; }
+
+  .error-msg{ color:var(--bad); font-size:13px; min-height:18px; margin:-4px 0 10px; }
+
+  .mode-title{
+    font-family:'Playfair Display', serif;
+    font-size:20px;
+    margin:0 0 18px;
+    color:var(--ink);
+    text-align:center;
+  }
+
+  .meta-row{
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:12px; color:var(--muted); margin-bottom:14px; width:100%;
+  }
+  .stars{ color:var(--accent-dark); letter-spacing:2px; font-size:14px; }
+
+  .review-box{
+    font-size:16px; line-height:1.6; color:var(--ink);
+    padding:16px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+    margin-bottom:20px; min-height:56px; width:100%;
+  }
+  .label{ font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom:8px; align-self:flex-start; }
+
+  .title-slot{ margin-bottom:16px; min-height:30px; width:100%; }
+  .title-placeholder{ font-family:'Playfair Display', serif; font-size:19px; color:var(--muted); }
+  .title-revealed{ font-family:'Playfair Display', serif; font-size:19px; color:var(--ok); font-weight:700; }
+
+  form{ display:flex; gap:8px; margin-bottom:10px; width:100%; }
+  form input{ margin-bottom:0; }
+
+  .row-actions{ display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; }
+  .btn-hint{
+    background:none; border:1px solid var(--line); color:var(--muted); padding:8px 14px;
+  }
+  .btn-hint:hover:not(:disabled){ border-color:var(--accent); color:var(--accent-dark); }
+  .btn-hint:disabled{ opacity:0.45; cursor:not-allowed; }
+  .btn-next{ background:var(--ink); color:#fff; padding:10px 18px; display:none; }
+  .btn-next.show{ display:inline-block; }
+
+  .hint-line{ font-size:12px; color:var(--muted); margin-top:8px; width:100%; }
+  .feedback{ min-height:18px; font-size:13px; margin-top:10px; font-weight:500; width:100%; }
+  .feedback.ok{ color:var(--ok); }
+  .feedback.bad{ color:var(--bad); }
+
+  .profile-zone{ display:none; margin-top:20px; width:100%; }
+  .profile-zone.show{ display:block; }
+  .profile-grid{ display:flex; flex-wrap:wrap; gap:8px; }
+  .btn-profile{
+    background:#fff; border:1px solid var(--line); color:var(--ink); padding:9px 15px; font-weight:500; font-size:13px;
+  }
+  .btn-profile:hover:not(:disabled){ border-color:var(--accent); color:var(--accent-dark); }
+  .btn-profile.correct{ background:var(--ok); border-color:var(--ok); color:#fff; }
+  .btn-profile.wrong{ background:var(--bad); border-color:var(--bad); color:#fff; }
+  .btn-profile:disabled{ cursor:not-allowed; }
+
+  .next-row{ margin-top:20px; display:flex; justify-content:flex-end; width:100%; }
+
+  .scoreboard{ display:flex; gap:10px; margin-bottom:20px; font-size:12px; color:#c3cbd2; flex-wrap:wrap; justify-content:center; }
+  .scoreboard div{ background:rgba(255,255,255,0.06); padding:8px 16px; border-radius:6px; text-align:center; }
+  .scoreboard span{ display:block; font-family:'Playfair Display', serif; font-size:18px; color:#f5f6f7; font-weight:600; margin-top:2px; }
+
+  .player-list{ width:100%; list-style:none; padding:0; margin:0 0 18px; }
+  .player-list li{
+    display:flex; justify-content:space-between; padding:9px 12px; border:1px solid var(--line);
+    border-radius:6px; margin-bottom:6px; font-size:14px;
+  }
+  .player-list li .pts{ color:var(--muted); font-variant-numeric:tabular-nums; }
+  .player-list li.you{ border-color:var(--accent); background:#f0f4f6; }
+  .player-list li.leader .pts{ color:var(--ok); font-weight:700; }
+
+  .mini-scores{ width:100%; display:flex; flex-wrap:wrap; gap:6px; margin-bottom:18px; }
+  .mini-scores span{
+    font-size:11px; background:#eef1f3; border-radius:20px; padding:4px 10px; color:var(--ink);
+  }
+
+  .round-tag{ font-size:12px; color:var(--muted); margin-bottom:4px; }
+  .timer-tag{ font-size:12px; color:var(--accent-dark); font-variant-numeric:tabular-nums; }
+
+  .reveal-box{
+    width:100%; text-align:center; padding:22px 0;
+  }
+  .reveal-box .winner{
+    font-family:'Playfair Display', serif; font-size:22px; color:var(--ok); margin-bottom:6px;
+  }
+  .reveal-box .film{ font-size:15px; color:var(--ink); margin-bottom:4px; }
+  .reveal-box .sub{ font-size:12px; color:var(--muted); }
+
+  footer{ margin-top:28px; font-size:11px; color:#aab4bd; text-align:center; max-width:460px; }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>La Mif Letterboxd <span aria-hidden="true">🍑</span></h1>
+  <p id="subtitle">Devine le film — et devine qui a écrit la critique</p>
+</header>
+
+<!-- ÉCRAN 1 : PSEUDO -->
+<div class="screen active" id="screen-pseudo">
+  <div class="card stack">
+    <div class="field-label">Ton pseudo</div>
+    <input type="text" id="pseudo-input" placeholder="Ex. Victor" maxlength="20">
+    <div class="error-msg" id="pseudo-error"></div>
+    <button class="btn-primary" id="pseudo-continue">Continuer</button>
+  </div>
+</div>
+
+<!-- ÉCRAN 2 : CHOIX DU MODE -->
+<div class="screen" id="screen-mode">
+  <div class="card stack">
+    <p class="mode-title">Comment tu veux jouer ?</p>
+    <button class="btn-primary" id="mode-solo">Solo</button>
+    <button class="btn-secondary" id="mode-multi">Multijoueur</button>
+    <button class="btn-link" id="mode-back-pseudo">← Changer de pseudo</button>
+  </div>
+</div>
+
+<!-- ÉCRAN 3 : SOLO -->
+<div class="screen" id="screen-solo">
+  <div class="scoreboard">
+    <div>Score<span id="solo-score">0</span></div>
+    <div>Série<span id="solo-streak">0</span></div>
+    <div>Dossier<span id="solo-progress">1/1</span></div>
+  </div>
+  <div class="card">
+    <div class="meta-row">
+      <span id="solo-case-id">N°001</span>
+      <span class="stars" id="solo-stars">★★★</span>
+    </div>
+    <div class="review-box" id="solo-review-text">…</div>
+    <div class="label">Le film</div>
+    <div class="title-slot"><span class="title-placeholder" id="solo-title-bar">???</span></div>
+    <form id="solo-guess-form" autocomplete="off">
+      <input type="text" id="solo-guess-input" placeholder="Ton hypothèse…">
+      <button type="submit" class="btn-primary" style="width:auto;">Deviner</button>
+    </form>
+    <div class="row-actions">
+      <button class="btn-hint" id="solo-hint-btn" type="button">Indice (-15 pts)</button>
+      <button class="btn-hint" id="solo-skip-btn" type="button">Passer →</button>
+    </div>
+    <div class="hint-line" id="solo-hint-line"></div>
+    <div class="feedback" id="solo-feedback"></div>
+    <div class="profile-zone" id="solo-profile-zone">
+      <div class="label">Qui l'a écrite ?</div>
+      <div class="profile-grid" id="solo-profile-grid"></div>
+      <div class="feedback" id="solo-profile-feedback"></div>
+    </div>
+    <div class="next-row"><button class="btn-next" id="solo-next-btn" type="button">Dossier suivant →</button></div>
+  </div>
+  <button class="btn-link" id="solo-quit">← Retour au menu</button>
+</div>
+
+<!-- ÉCRAN 3bis : FIN DE MANCHE SOLO -->
+<div class="screen" id="screen-solo-final">
+  <div class="card stack">
+    <p class="mode-title">Manche terminée !</p>
+    <div style="text-align:center; margin-bottom:22px;">
+      <div class="label" style="justify-content:center; text-align:center;">Score final</div>
+      <div id="solo-final-score" style="font-family:'Playfair Display', serif; font-size:36px; font-weight:700; color:var(--ink);">0</div>
+    </div>
+    <button class="btn-primary" id="solo-final-replay">Rejouer (10 nouveaux films)</button>
+    <button class="btn-secondary" id="solo-final-menu">Retour au menu</button>
+  </div>
+</div>
+
+<!-- ÉCRAN 4 : CHOIX MULTIJOUEUR -->
+<div class="screen" id="screen-mp-choice">
+  <div class="card stack">
+    <p class="mode-title">Salon multijoueur</p>
+    <button class="btn-primary" id="mp-choice-host">Héberger un salon</button>
+    <button class="btn-secondary" id="mp-choice-join">Rejoindre un salon</button>
+    <button class="btn-link" id="mp-choice-back">← Retour</button>
+  </div>
+</div>
+
+<!-- ÉCRAN 5 : HÉBERGER -->
+<div class="screen" id="screen-mp-host">
+  <div class="card stack">
+    <p class="mode-title">Créer un salon</p>
+    <div class="field-label">Mot de passe du salon</div>
+    <input type="text" id="host-pw" placeholder="Choisis un mot de passe" maxlength="24">
+    <div class="error-msg" id="host-error"></div>
+    <button class="btn-primary" id="host-create">Créer le salon</button>
+    <button class="btn-link" id="host-back">← Retour</button>
+  </div>
+</div>
+
+<!-- ÉCRAN 6 : REJOINDRE -->
+<div class="screen" id="screen-mp-join">
+  <div class="card stack">
+    <p class="mode-title">Rejoindre un salon</p>
+    <div class="field-label">Mot de passe du salon</div>
+    <input type="text" id="join-pw" placeholder="Mot de passe donné par l'hôte" maxlength="24">
+    <div class="error-msg" id="join-error"></div>
+    <button class="btn-primary" id="join-enter">Rejoindre</button>
+    <button class="btn-link" id="join-back">← Retour</button>
+  </div>
+</div>
+
+<!-- ÉCRAN 7 : LOBBY -->
+<div class="screen" id="screen-mp-lobby">
+  <div class="card stack">
+    <p class="mode-title">Salon en attente</p>
+    <div class="label">Joueurs connectés</div>
+    <ul class="player-list" id="lobby-players"></ul>
+    <div id="lobby-host-controls" style="display:none; width:100%;">
+      <button class="btn-primary" id="lobby-start">Lancer la partie (10 manches)</button>
+    </div>
+    <p id="lobby-wait-msg" class="feedback" style="display:none;">En attente que l'hôte lance la partie…</p>
+    <button class="btn-link" id="lobby-quit">← Quitter le salon</button>
+  </div>
+</div>
+
+<!-- ÉCRAN 8 : PARTIE MULTIJOUEUR -->
+<div class="screen" id="screen-mp-game">
+  <div class="mini-scores" id="mp-mini-scores"></div>
+  <div class="card">
+    <div class="meta-row">
+      <span class="round-tag" id="mp-round-tag">Manche 1/10</span>
+      <span class="timer-tag" id="mp-timer">0.0s</span>
+    </div>
+    <div class="meta-row">
+      <span></span>
+      <span class="stars" id="mp-stars">★★★</span>
+    </div>
+
+    <div id="mp-round-active">
+      <div class="review-box" id="mp-review-text">…</div>
+      <div class="label">Le film</div>
+      <div class="title-slot"><span class="title-placeholder" id="mp-title-bar">???</span></div>
+      <div class="hint-line" id="mp-hint-line"></div>
+      <form id="mp-guess-form" autocomplete="off">
+        <input type="text" id="mp-guess-input" placeholder="Ton hypothèse…">
+        <button type="submit" class="btn-primary" style="width:auto;">Deviner</button>
+      </form>
+      <div class="feedback" id="mp-feedback"></div>
+      <button class="btn-hint" id="mp-idk-btn" type="button">Je ne sais pas</button>
+      <div class="profile-zone" id="mp-profile-zone">
+        <div class="label">Qui l'a écrite ?</div>
+        <div class="profile-grid" id="mp-profile-grid"></div>
+        <div class="feedback" id="mp-profile-feedback"></div>
+      </div>
+    </div>
+
+    <div id="mp-round-reveal" style="display:none;">
+      <div class="reveal-box">
+        <div class="winner" id="mp-winner-name">—</div>
+        <div class="film" id="mp-winner-film">—</div>
+        <div class="sub">Manche suivante dans un instant…</div>
+      </div>
+    </div>
+  </div>
+  <button class="btn-link" id="mp-quit">← Quitter la partie</button>
+</div>
+
+<!-- ÉCRAN 9 : RÉSULTATS FINAUX -->
+<div class="screen" id="screen-mp-final">
+  <div class="card stack">
+    <p class="mode-title">Résultats finaux</p>
+    <ul class="player-list" id="final-players"></ul>
+    <div id="final-host-controls" style="display:none; width:100%;">
+      <button class="btn-primary" id="final-replay-same">Rejouer avec les mêmes joueurs</button>
+    </div>
+    <p id="final-wait-msg" class="feedback" style="display:none;">En attente que l'hôte relance la partie…</p>
+    <button class="btn-secondary" id="final-replay">Retour au menu</button>
+  </div>
+</div>
+
+<footer>
+  Critiques extraites des profils Letterboxd publics de la mif.
+</footer>
+
+<script type="module">
+// ================= STOCKAGE PARTAGÉ EN LIGNE (FIREBASE) =================
+// window.storage est l'API utilisée par tout le reste du jeu (get/set/delete/list).
+// Elle est ici branchée sur Firebase Realtime Database : toutes les parties
+// (lobby, manches, scores, buzzers) passent par une vraie base en ligne,
+// donc plusieurs joueurs sur des navigateurs / appareils différents partout
+// dans le monde peuvent jouer ensemble en temps réel.
+// IMPORTANT : ces imports Firebase se chargent depuis un CDN externe. S'ils
+// échouent (pas de réseau, adblocker, ouverture du fichier en local, CDN
+// bloqué...), un `import` statique en haut d'un script planterait TOUT le
+// module et aucun bouton du jeu ne répondrait plus, même en mode solo.
+// On charge donc Firebase dynamiquement et on intercepte l'échec : le mode
+// solo (qui n'a pas besoin de réseau) continue de fonctionner normalement,
+// et seul le multijoueur signale clairement le problème.
+let getDatabase, ref, dbGet, dbSet, dbRemove, query, orderByKey, startAt, endAt, db;
+let firebaseReady = false;
+
+async function initFirebase(){
+  try{
+    const [{ initializeApp }, dbMod] = await Promise.all([
+      import("https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js"),
+      import("https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js")
+    ]);
+    ({ getDatabase, ref, get: dbGet, set: dbSet, remove: dbRemove, query, orderByKey, startAt, endAt } = dbMod);
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDmVFsBskp1KOIQ3Vihe6O6RmP4mhvcEEI",
+      authDomain: "letterboxdlamif.firebaseapp.com",
+      databaseURL: "https://letterboxdlamif-default-rtdb.firebaseio.com",
+      projectId: "letterboxdlamif",
+      storageBucket: "letterboxdlamif.firebasestorage.app",
+      messagingSenderId: "925064775329",
+      appId: "1:925064775329:web:341d4e3eac9916a6d1d2e0",
+      measurementId: "G-EMLLMDZ080"
+    };
+    const firebaseApp = initializeApp(firebaseConfig);
+    db = getDatabase(firebaseApp);
+    firebaseReady = true;
+  }catch(e){
+    firebaseReady = false;
+    console.warn('[La Mif Letterboxd] Firebase indisponible (réseau coupé ou script bloqué) — mode solo uniquement.', e);
+  }
+}
+// Top-level await : le reste du script (donc TOUS les boutons et raccourcis
+// clavier, y compris le mode solo) ne s'exécute qu'une fois cette tentative
+// terminée, que Firebase ait chargé ou non.
+await initFirebase();
+
+// Toutes les données du jeu vivent sous ce nœud racine dans la base.
+const ROOT = 'lmlb';
+
+// Les clés utilisées par le jeu (mots de passe de salon, pseudos, etc.)
+// peuvent contenir des caractères interdits dans un chemin Realtime Database
+// ( . # $ [ ] / ). On les encode donc avant de les utiliser comme chemin,
+// et on les décode à la lecture — totalement transparent pour le reste du code.
+function encodeKey(key){
+  return encodeURIComponent(String(key)).replace(/\./g, '%2E');
+}
+function decodeKey(key){
+  return decodeURIComponent(key);
+}
+
+window.storage = {
+  async get(key, shared){
+    if(!firebaseReady) throw new Error('Firebase indisponible');
+    const snap = await dbGet(ref(db, `${ROOT}/${encodeKey(key)}`));
+    if(!snap.exists()){ throw new Error('key not found: ' + key); }
+    return { key, value: snap.val(), shared: !!shared };
+  },
+  async set(key, value, shared){
+    if(!firebaseReady) throw new Error('Firebase indisponible');
+    await dbSet(ref(db, `${ROOT}/${encodeKey(key)}`), value);
+    return { key, value, shared: !!shared };
+  },
+  async delete(key, shared){
+    if(!firebaseReady) throw new Error('Firebase indisponible');
+    const path = ref(db, `${ROOT}/${encodeKey(key)}`);
+    const snap = await dbGet(path);
+    const existed = snap.exists();
+    await dbRemove(path);
+    return { key, deleted: existed, shared: !!shared };
+  },
+  async list(prefix, shared){
+    if(!firebaseReady) throw new Error('Firebase indisponible');
+    const p = prefix || '';
+    const startKey = encodeKey(p);
+    const endKey = startKey + '\uf8ff';
+    const q = query(ref(db, ROOT), orderByKey(), startAt(startKey), endAt(endKey));
+    const snap = await dbGet(q);
+    const keys = [];
+    if(snap.exists()){
+      snap.forEach(child => { keys.push(decodeKey(child.key)); });
+    }
+    return { keys, prefix, shared: !!shared };
+  }
+};
+if(firebaseReady){
+  console.info('[La Mif Letterboxd] window.storage branché sur Firebase Realtime Database — multijoueur en ligne actif.');
+} else {
+  console.warn('[La Mif Letterboxd] Multijoueur désactivé : Firebase n\'a pas pu être chargé.');
+}
+
+// ================= DONNÉES =================
+const PROFILES = ["Victor", "Sélène", "Jambon", "Chloé", "Berries", "Alex", "Coton"];
+
+const CASES = [
+  { profile:"Victor", title:"Meg 2: The Trench", year:2023, rating:2, review:"Pippin somehow the only one who can take care of themself" },
+  { profile:"Victor", title:"The Odyssey", year:2026, rating:4, review:"Despite the wonky ass costumes the movie kinda hits" },
+  { profile:"Victor", title:"In Waves", year:2026, rating:4.5, review:"J'ai pleuré 100 fois, le film m'a détruit, mon cœur est tombé dans ma poitrine, mon âme s'est fissuré en 1000 morceaux, j'ai besoin de 24h pour parler à nouveau" },
+  { profile:"Victor", title:"Eega", year:2012, rating:3, review:"What Cronenberg had in mind initially but couldn't possibly have done" },
+  { profile:"Victor", title:"Backrooms", year:2026, rating:3, review:"Your day is getting fucked by your worst patient stealing furnitures from his echo chamber" },
+  { profile:"Victor", title:"Tattoo", year:2019, rating:4, review:"She should have the licence to kill them" },
+  { profile:"Victor", title:"Headhunters", year:2011, rating:3, review:"This is what I do when someone doesn't write me a recommandation letter too" },
+  { profile:"Victor", title:"Closer", year:2004, rating:1.5, review:"The most man movie ever, it's horrible" },
+  { profile:"Victor", title:"Breaking the Waves", year:1996, rating:4, review:"It's been a long time since I last saw a Lars Von Trier movie but everytime you can be sure you will end up fucked up mentally for the rest of the day." },
+  { profile:"Victor", title:"eXistenZ", year:1999, rating:4, review:"I feel so dirty each time I watch a Cronenberg movie. Had a great time though. Never thought I would see Jude Law penetrated." },
+  { profile:"Victor", title:"Dual", year:2022, rating:2.5, review:"The movie: And she basically got expelled from her own life. My brain: Damn Peter has a thick booty" },
+  { profile:"Victor", title:"Inland Empire", year:2006, rating:4, review:"Lynch feeding my nightmares is the best Lynch there is." },
+  { profile:"Victor", title:"Our Little Sister", year:2015, rating:4, review:"This got me teary in 15 minutes, I can't believe I can be such an emotional wreck sometimes." },
+  { profile:"Victor", title:"Mysterious Skin", year:2004, rating:4.5, review:"The fact that this was so soothing and beautiful but horrible crushed me. That's my dose of poetic sadness for the month." },
+  { profile:"Victor", title:"Stray Dog", fr:"Chien enragé", year:1949, rating:3.5, review:"Watching this drenched in sweat on a sunny day is a mood. Also Toshiro Mifune is hot in this." },
+  { profile:"Victor", title:"Paprika", year:2006, rating:3.5, review:"Everyone who thinks Inception was confusing obviously hasn't seen this" },
+  { profile:"Victor", title:"The Lord of the Rings: The Fellowship of the Ring", fr:"Le Seigneur des anneaux : La Communauté de l'anneau", year:2001, rating:3, review:"Please Letterboxd people, spare me" },
+  { profile:"Victor", title:"The Bird with the Crystal Plumage", year:1970, rating:3.5, review:"Everytime I watch a Dario Argento movie it feels like watching a R-rated version of Scooby-Doo and it's wonderful" },
+  { profile:"Victor", title:"The Twilight Saga: Breaking Dawn – Part 2", year:2012, rating:2.5, review:"You imprinted on my daughter ??? Pretty twisted. You nicknamed my daughter after the Loch Ness Monster ???!!!! And somehow she seemed more upset about that." },
+  { profile:"Victor", title:"Hachi: A Dog's Tale", fr:"Hachiko, chien fidèle", year:2009, rating:4, review:"Me already knowing how the story ends plus me being \"cuuuute\" every two seconds has obviously led me to uncontrollably sob" },
+  { profile:"Victor", title:"Jackass Forever", year:2022, rating:1, review:"I mean 1 star because I got to see MGK getting the shit kicked out of him and damn I'm not a spiteful person but it is satisfying as hell otherwise it's the nastiest, stupidest and most american pile of crap on earth." },
+  { profile:"Victor", title:"Fire of Love", year:2022, rating:4, review:"Had to double-check if this wasn't secretly directed by Wes Anderson" },
+  { profile:"Victor", title:"The Whale", year:2022, rating:4.5, review:"All of that because of the U.S inexisting healthcare" },
+  { profile:"Victor", title:"Ocean's Eight", year:2018, rating:3.5, review:"Everything makes so much sense now...on why I saw Sandra Bullock shooting a scene on the street for a movie when I was in New-York while exiting the Met back in 2017" },
+  { profile:"Victor", title:"Barbie", year:2023, rating:5, review:"This is everything I waited for" },
+  { profile:"Victor", title:"Indiana Jones and the Dial of Destiny", fr:"Indiana Jones et le Cadran de la destinée", year:2023, rating:2.5, review:"Well, that didn't age well...oops it just came out" },
+  { profile:"Victor", title:"This Is the End", year:2013, rating:2.5, review:"*teary eyes* Can I be honest ? When I found out that this wasn't about Riri I had lost interest anyway" },
+  { profile:"Victor", title:"The Fire Within: A Requiem for Katia and Maurice Krafft", year:2022, rating:4, review:"\"here we can see cows that sank into the mud days ago. There are irretrievable. They will die here.\" *Zooms on a cow in agony* Me: *sobbing so much*" },
+  { profile:"Victor", title:"To the Ends of the Earth", year:2019, rating:3.5, review:"Long story short, a Ben 10 character is stopping me from visiting Uzbekistan, so getting to do that in a way with this movie is pretty nifty I would say" },
+  { profile:"Victor", title:"The Fall Guy", year:2024, rating:4, review:"Makes sense, I would also take a beating for Emily Blunt" },
+  { profile:"Victor", title:"Beau Travail", year:1999, rating:4, review:"Usually I don't listen to men but when Claire Denis is saying something, I listen. Which means I still don't listen to men then." },
+  { profile:"Victor", title:"Kinds of Kindness", year:2024, rating:3.5, review:"Ah yes, the famous move to hit on a girl that consists of screaming \"AAAAAAAAAAAAAH\" in front of the women's bathroom" },
+  { profile:"Victor", title:"The Children's Hour", year:1961, rating:4, review:"Congrats on making one of the most hated child character in a movie" },
+  { profile:"Victor", title:"MaXXXine", year:2024, rating:3.5, review:"I saw more sniffing lines than learning lines" },
+  { profile:"Victor", title:"Eurovision Song Contest: The Story of Fire Saga", year:2020, rating:3.5, review:"Talking to the elf lover crazy woman beside me to avoid getting killed" },
+  { profile:"Victor", title:"Miracle in Cell No. 7", year:2019, rating:4, review:"They were very proud of that tree transition" },
+  { profile:"Victor", title:"A Quiet Place: Day One", fr:"Sans un bruit : Jour 1", year:2024, rating:3.5, review:"This is the perfect film to know who in the theater is gonna survive and gonna die if the world came to this" },
+  { profile:"Victor", title:"Microcosmos", year:1996, rating:3.5, review:"The movie ending on the birth of a mosquito is like the birth of an evil character that will try to destroy the world in the sequels, except there is no sequel, it's just us and we are fucked" },
+  { profile:"Victor", title:"Jackie", year:2016, rating:4, review:"It's fascinating how he films these. Not an unfolding of dramatized historical events but an author mise en scène of these women's psyche dripped in compassion." },
+  { profile:"Victor", title:"Trap", year:2024, rating:3, review:"Another add to the \"when this is a guy favorite film, run\" list" },
+  { profile:"Victor", title:"Gia", year:1998, rating:4, review:"She do be the prettiest *in tears*" },
+  { profile:"Victor", title:"Enter the Dragon", fr:"Opération Dragon", year:1973, rating:3.5, review:"Zooming in Bruce Lee's face to avoid showing he's breaking teenagers necks" },
+  { profile:"Victor", title:"Speak No Evil", year:2024, rating:3.5, review:"James McAvoy as the bulked psycho is a new genre from now on" },
+  { profile:"Victor", title:"Cat People", fr:"La Féline", year:1942, rating:3.5, review:"That guy is blank like a piece of paper, the least he can do is to let himself be shredded to pieces" },
+  { profile:"Victor", title:"The Room Next Door", year:2024, rating:4, review:"Where can I find Julianne Moore sunglasses ?" },
+  { profile:"Victor", title:"Je Tu Il Elle", year:1974, rating:2, review:"Fuck (literally)" },
+  { profile:"Victor", title:"The Parent Trap", fr:"À nous quatre", year:1998, rating:3.5, review:"That's good except I can't see Denis Quaid as being other than a guy pretending to be nice with a big smile but in reality being the most machiavelic person possible" },
+  { profile:"Victor", title:"Free Willy", year:1993, rating:3, review:"You guys are so mean to that movie that's crazy" },
+  { profile:"Victor", title:"Time Still Turns the Pages", year:2023, rating:4, review:"Oh yeah don't mind me I just cried 4 liters of tears, I'm fine. Debussy is causing so much depression in South East Asia, you should be ashamed of yourself man" },
+  { profile:"Victor", title:"Black Bag", year:2025, rating:3.5, review:"\"Would you kill for me ?\" Yes Cate Blanchett 🧎" },
+  { profile:"Victor", title:"How to Make Millions Before Grandma Dies", year:2024, rating:4.5, review:"I am completely and utterly devastated. I need time to recover" },
+  { profile:"Victor", title:"HAIKYU!! The Dumpster Battle", year:2024, rating:4.5, review:"Did I watch the whole anime to see that movie ? Yes. Do I regret it ? Absolutely not" },
+  { profile:"Victor", title:"Little Amélie or the Character of Rain", year:2025, rating:4, review:"Yeah Amélie was like « I'm all that, I'm so great look at me » But actually she is" },
+  { profile:"Victor", title:"Eden Lake", year:2008, rating:3.5, review:"It's so heartwarming to see such a great sense of community" },
+  { profile:"Victor", title:"Mamma Mia!", year:2008, rating:3.5, review:"My parents were like \"we heard you sing for like 2 hours what's happening ?\" Well this happened" },
+  { profile:"Victor", title:"Hero", year:2002, rating:4, review:"I really enjoy how it's commonly accepted that ancient warriors in China have the ability to fly" },
+  { profile:"Victor", title:"Victor/Victoria", year:1982, rating:3.5, review:"When Victoria cried during the famous elongated note in Un bel di vedremo I related to that" },
+  { profile:"Victor", title:"Finding Dory", fr:"Le Monde de Dory", year:2016, rating:3.5, review:"*echoing* Hello ! I'm Sigourney Weaver 🌅🪽" },
+  { profile:"Victor", title:"Céline and Julie Go Boating", fr:"Céline et Julie vont en bateau", year:1974, rating:4.5, review:"Mais le film est complètement incroyable ??? Super fun la bague/talisman yeux, où est ce que je peux trouver ça ?" },
+  { profile:"Victor", title:"A Woman Under the Influence", fr:"Une femme sous influence", year:1974, rating:4, review:"I was eating spaghetti while watching this, that's real 4DX for you folks" },
+  { profile:"Victor", title:"The Song of Sparrows", year:2008, rating:4, review:"Croyez le ou non mais il y a Femme like U de K.Maro dans ce film" },
+  { profile:"Victor", title:"All the Long Nights", year:2024, rating:3.5, review:"The movie: PMS ? Let her wash a car, that will do her some good" },
+  { profile:"Victor", title:"Emma.", year:2020, rating:3.5, review:"Great watch, had a real treat gasping at each gossip and 19th century's punchline" },
+  { profile:"Victor", title:"28 Years Later", fr:"28 ans plus tard", year:2025, rating:4, review:"The way Ralph Fiennes is like one of the most soothing people on earth even during apocalypse" },
+  { profile:"Victor", title:"The Secret Agent", year:2025, rating:3.5, review:"If I had a penny for each brazilan films I saw in which Udo Kier features in I'd have two pennies, which isn't a lot but it's weird it happened twice." },
+  { profile:"Victor", title:"An Elephant Sitting Still", fr:"Un grand éléphant assis là-bas", year:2018, rating:4.5, review:"My gosh I need some time to wrap my head around this film. I have so many thoughts but everything screams chaos in silence and internalizing your existence. This was an experience and that is going to be on my mind for a long time. PS: I need to say that the camerawork is out of this world. (And the sound design is magnificent)" },
+  { profile:"Victor", title:"Bringing Out the Dead", fr:"À tombeau ouvert", year:1999, rating:4.5, review:"No one asked you to suffer. That was your Idea. That was probably one if not the deepest and darkest Scorsese movie. The pain and torment of a man who doesn't want to let go of his guilt so well portrayed by Nicolas Cage who delivers, for me, one of his best performance here. On a purely aesthetic aspect the movie is fabulous but the dynamics and the multitude of thematics evoked was what got me hooked the most. Still a very Scorsese movie on all points but very new to me." },
+  { profile:"Victor", title:"John Wick: Chapter 2", year:2017, rating:3, review:"Imagine what John Wick would do to you if you stole his carte de fidélité Carrefour." },
+  { profile:"Sélène", title:"Death of a Unicorn", year:2025, rating:1.5, review:"Mauvais mix entre avatar et Frankenstein" },
+  { profile:"Sélène", title:"Taxi Driver", year:1976, rating:3, review:"Pop corn, barre de chocolat et un royal coca pour 1$85 !?!" },
+  { profile:"Sélène", title:"Hostel: Part III", year:2011, rating:1, review:"Men..." },
+  { profile:"Sélène", title:"Good Boy", year:2022, rating:2, review:"You have to be more attentive to redflags" },
+  { profile:"Sélène", title:"El Dodorado", year:2024, rating:5, review:"Wow le super film !" },
+  { profile:"Sélène", title:"Eurovision Song Contest: The Story of Fire Saga", year:2020, rating:3.5, review:"I believe in elves" },
+  { profile:"Sélène", title:"Atonement", fr:"Reviens-moi", year:2007, rating:4.5, review:"It's a bitch." },
+  { profile:"Sélène", title:"Skinamarink", year:2022, rating:1, review:"Heureusement que Victor est la" },
+  { profile:"Sélène", title:"It Follows", year:2014, rating:3, review:"Go in Iceland" },
+  { profile:"Sélène", title:"Blue Lagoon: The Awakening", year:2012, rating:1, review:"we played with the flasherswe played to turn off and turn on the flashers" },
+  { profile:"Sélène", title:"20th Century Girl", year:2022, rating:3.5, review:"The father is the best character" },
+  { profile:"Sélène", title:"Alien Resurrection", year:1997, rating:3.5, review:"Poor baby" },
+  { profile:"Sélène", title:"Crawl", year:2019, rating:2, review:"Why are they all so stupid?" },
+  { profile:"Sélène", title:"First Cow", year:2019, rating:3, review:"Couple goal" },
+  { profile:"Sélène", title:"Sharkula", year:2022, rating:1, review:"Best vfx" },
+  { profile:"Sélène", title:"The Pope's Exorcist", year:2023, rating:2, review:"Let's go to hell" },
+  { profile:"Sélène", title:"The Super Mario Bros. Movie", year:2023, rating:3.5, review:"Peach peach pitchounette Love you petite étoile bleu" },
+  { profile:"Sélène", title:"Smile", year:2022, rating:3, review:"Just smile" },
+  { profile:"Sélène", title:"Jurassic World Dominion", year:2022, rating:3, review:"VIVE LES DINOSAURES ! JE VEUX UN DINOSAURES" },
+  { profile:"Sélène", title:"Malignant", year:2021, rating:4, review:"Go Maddison Go for the babies" },
+  { profile:"Jambon", title:"Sidelined: The QB and Me", year:2024, rating:1.5, review:"Il m'a suffit de lire «Wattpad» et «quarterback» pour connaître toute l'histoire (même si le kidnapping d'enfant m'a surpris je l'avoue)" },
+  { profile:"Jambon", title:"Mermaids", year:1990, rating:3.5, review:"15 et 26 ????? C'est du détournement de mineur, Joe." },
+  { profile:"Jambon", title:"Summer Beats", year:2025, rating:4, review:"Fan n°1 de Guillaume" },
+  { profile:"Jambon", title:"Bad Boys: Ride or Die", year:2024, rating:2, review:"Hidalgo qui préfère acheter un palace au Mexique plutôt que de s'occuper du périf à 50km/h" },
+  { profile:"Jambon", title:"Dog 51", year:2025, rating:2, review:"Tuer des hommes ok mais Paloma était-ce nécessaire ???????" },
+  { profile:"Jambon", title:"Mission: Impossible – The Final Reckoning", year:2025, rating:4, review:"🚁niooonnnnn" },
+  { profile:"Jambon", title:"Mickey 17", year:2025, rating:4, review:"Oupsi" },
+  { profile:"Jambon", title:"Yellow Submarine", year:1968, rating:3.5, review:"Maybe I smoke something that wasn't supposed to be smoke" },
+  { profile:"Jambon", title:"The Holiday", year:2006, rating:4, review:"Est-ce que je dois vraiment échanger de maison avec une anglaise pour avoir Jude Law ?" },
+  { profile:"Jambon", title:"A Knight's Tale", year:2001, rating:3.5, review:"I liked William but did you see the mean sexy count, like 🫦" },
+  { profile:"Jambon", title:"Alien", year:1979, rating:4, review:"Stomp stomp stomp" },
+  { profile:"Jambon", title:"The Iron Giant", year:1999, rating:4.5, review:"4,75 Il est mieux que superman" },
+  { profile:"Jambon", title:"Maria", year:2024, rating:4.5, review:"She's a swan. She sings while dying" },
+  { profile:"Jambon", title:"Babygirl", year:2024, rating:3, review:"Not so coquette babygirl" },
+  { profile:"Jambon", title:"The Game", year:1997, rating:4.5, review:"Sinon une carte cadeau FNAC c'était bien aussi hein" },
+  { profile:"Jambon", title:"Interview with the Vampire", year:1994, rating:3, review:"Vampires are soooo gay. I like that" },
+  { profile:"Jambon", title:"Conclave", year:2024, rating:4, review:"Mama Mia, ça papote fort au Vatican." },
+  { profile:"Jambon", title:"Oldboy", year:2003, rating:4.5, review:"I just finished but I keep thinking about the use of wallpaper. Like, is this a 2003 trend or is it because the world is a much bigger prison ?" },
+  { profile:"Jambon", title:"Juror #2", year:2024, rating:3, review:"12 angry men but Henry Fonda isn't JUST a huge fan of critical thinking." },
+  { profile:"Jambon", title:"The Count of Monte Cristo", year:2024, rating:3.5, review:"L'autre il a trahi son pote pour pécho et faire un gosse à sa cousine ????" },
+  { profile:"Jambon", title:"The Notebook", year:2004, rating:4.5, review:"« I wrote you 365 letters » C'est la pluie qui coule sur mes joues." },
+  { profile:"Jambon", title:"The Wild Robot", year:2024, rating:4.5, review:"J'ai tellement pleuré puis rigolé puis repleuré et ça en boucle." },
+  { profile:"Jambon", title:"Shaolin Soccer", year:2001, rating:3, review:"Le cinéma a été créé pour donner naissance à ce chef d'œuvre" },
+  { profile:"Jambon", title:"Spencer", year:2021, rating:4.5, review:"La seule anglaise que j'aime" },
+  { profile:"Jambon", title:"The Fast and the Furious: Tokyo Drift", year:2006, rating:3, review:"La dernière licorne" },
+  { profile:"Jambon", title:"Anatomy of a Fall", fr:"Anatomie d'une chute", year:2023, rating:4.5, review:"Your generosity conceals something dirtier and meaner" },
+  { profile:"Chloé", title:"Purple Hearts", year:2022, rating:2.5, review:"J'ai bien rigolé" },
+  { profile:"Chloé", title:"JUJUTSU KAISEN", year:2020, rating:5, review:"J'savais pas qu'on pouvais noter ça aussi !!!" },
+  { profile:"Chloé", title:"Invictus", year:2009, rating:3.5, review:"J'ai toujours rien compris au rugby" },
+  { profile:"Chloé", title:"Jurassic Park", year:1993, rating:4, review:"Ça a changé sumeru" },
+  { profile:"Chloé", title:"The Batman", year:2022, rating:3.5, review:"Not Alfred being Gollum" },
+  { profile:"Chloé", title:"KPop Demon Hunters", year:2025, rating:3.5, review:"Je vais enfin comprendre ma TL Twitter" },
+  { profile:"Chloé", title:"Nosferatu", year:2024, rating:3.5, review:"J'ai faillis vomir premier degré" },
+  { profile:"Chloé", title:"Shaolin Soccer", year:2001, rating:3, review:"C'était tellement nul que ça en était presque bien. C'est trop dommage que ce soit si long" },
+  { profile:"Chloé", title:"Seven Winters in Tehran", fr:"Sept hivers à Téhéran", year:2023, rating:0, review:"Je refuse de noter. La vie des femmes ne se quantifie pas sur une échelle de 0 à 5." },
+  { profile:"Chloé", title:"And Then We Danced", fr:"Et nous danserons", year:2019, rating:3.5, review:"Potentiellement que si je n'avais pas eu besoin de me battre avec les sous-titres pour qu'ils soient alignés aux paroles j'aurais passé un meilleur moment" },
+  { profile:"Chloé", title:"Conclave", year:2024, rating:4, review:"Coquette cardinal accorde sa clope à sa toge" },
+  { profile:"Chloé", title:"A Separation", fr:"Une séparation", year:2011, rating:4, review:"C'est fou comme il y a des films comme ça, tu ne sais pas trop pourquoi mais it does something to you" },
+  { profile:"Chloé", title:"Memories of Murder", year:2003, rating:4, review:"Un bon double kick résout tous les soucis" },
+  { profile:"Chloé", title:"The Substance", year:2024, rating:3, review:"Carrément ça m'a saoulé" },
+  { profile:"Chloé", title:"The Prestige", year:2006, rating:4.5, review:"Ça a changé Batman" },
+  { profile:"Chloé", title:"Silenced", year:2011, rating:4.5, review:"Peut être je me tue. Et j'emmène 4/5 personnes avec moi" },
+  { profile:"Chloé", title:"Shutter Island", year:2010, rating:4.5, review:"J'ai besoin des mêmes allumettes." },
+  { profile:"Chloé", title:"Edward Scissorhands", fr:"Edward aux mains d'argent", year:1990, rating:3.5, review:"Pourquoi ils sont tous débile ?" },
+  { profile:"Chloé", title:"Beau Is Afraid", year:2023, rating:3.5, review:"I really need to know what the hell does Ari Aster put in his nose for this. Because man, it seems strong" },
+  { profile:"Chloé", title:"Matilda", year:1996, rating:2, review:"Peut être qu'avec 20 ans de moins ça aurait pu commencer à être sympa/drôle." },
+  { profile:"Chloé", title:"Gone Girl", year:2014, rating:4, review:"J'ai eu peur pour le chat toute la fin du film" },
+  { profile:"Chloé", title:"10 Things I Hate About You", year:1999, rating:3.5, review:"C'est là que je me rend compte que mon système de note est pété parce que j'ai préféré à pas mal des films notés 3,5 mais moins que d'autre noté 4" },
+  { profile:"Chloé", title:"Eurovision Song Contest: The Story of Fire Saga", year:2020, rating:3.5, review:"Peut être je lance des couteaux sur Victor quand il est désagréable mtn" },
+  { profile:"Chloé", title:"Miracle in Cell No. 7", year:2019, rating:4.5, review:"Il y avait une réelle volonté de nuire en nous faisant regarder ça" },
+  { profile:"Chloé", title:"Mirai", fr:"Mirai, ma petite sœur", year:2018, rating:4.5, review:"Can i kiss his cute little forehead?" },
+  { profile:"Chloé", title:"Still Walking", year:2008, rating:4, review:"Il ne se passe pas grand chose et pourtant on se fait quand même embarquer par leur vie c'est fou. Le mec est trop fort" },
+  { profile:"Chloé", title:"Spirit: Stallion of the Cimarron", fr:"Spirit, l'étalon des plaines", year:2002, rating:5, review:"Même à 27 ans y'a la petite larme à l'œil" },
+  { profile:"Chloé", title:"A Ghost Story", year:2017, rating:3, review:"Potentiellement j'ai pas de cœur, mais ça ne m'a pas plus touché que ça. Jolis shot ceci dit, entre la composition et la Light" },
+  { profile:"Chloé", title:"Elvis", year:2022, rating:2.5, review:"J'étais pas très concentrée tout le long, mais je me suis quand même fais un peu chier hein" },
+  { profile:"Chloé", title:"Mysterious Skin", year:2004, rating:5, review:"I don't even know what to say. Maybe a little piece of me just broke" },
+  { profile:"Chloé", title:"Mulholland Drive", year:2001, rating:3.5, review:"C'est très mauvais de se coucher maquillé ☝🏼🤓" },
+  { profile:"Chloé", title:"Dune", year:2021, rating:4, review:"Je ne comprend pas les gens qui ne comprennent pas ce film." },
+  { profile:"Chloé", title:"The Zone of Interest", fr:"La Zone d'intérêt", year:2023, rating:2, review:"Is the interest in the zone with us tonight ?" },
+  { profile:"Chloé", title:"The Green Mile", fr:"La Ligne verte", year:1999, rating:5, review:"The mouse had my first tear" },
+  { profile:"Chloé", title:"The Holdovers", year:2023, rating:4.5, review:"Maybe j'ai besoin d'un friend riche avec un hélico" },
+  { profile:"Chloé", title:"Bohemian Rhapsody", year:2018, rating:4, review:"Y'a quand même un full point pour la BO" },
+  { profile:"Chloé", title:"Donnie Darko", year:2001, rating:5, review:"Mon cerveau est liquide" },
+  { profile:"Chloé", title:"The Lighthouse", year:2019, rating:2.5, review:"Peut être c'est moi j'suis débile hein" },
+  { profile:"Chloé", title:"Harry Potter and the Deathly Hallows: Part 2", fr:"Harry Potter et les Reliques de la Mort – 2e partie", year:2011, rating:4, review:"C'était pas si dur de suivre les bouquins purée" },
+  { profile:"Chloé", title:"Everything Everywhere All at Once", year:2022, rating:5, review:"Comme quoi, une coupe de cheveux ça change tout un visage" },
+  { profile:"Chloé", title:"Green Book", year:2018, rating:4, review:"Can Viggo be my dad ?" },
+  { profile:"Chloé", title:"Joker", year:2019, rating:4, review:"That's a really good film, but doesn't feel like a joker one" },
+  { profile:"Chloé", title:"Carol", year:2015, rating:4.5, review:"J'aurais aussi tout lâché pour Cate Blanchett" },
+  { profile:"Chloé", title:"Spider-Man: Across the Spider-Verse", year:2023, rating:5, review:"Mais merci Sony" },
+  { profile:"Chloé", title:"A Clockwork Orange", fr:"Orange mécanique", year:1971, rating:3, review:"Je crois que j'ai vraiment du mal avec Kubrick." },
+  { profile:"Berries", title:"Everything, Everything", year:2017, rating:3, review:"A peu de chose pres c'est le plot de raiponce" },
+  { profile:"Berries", title:"Crazy Rich Asians", year:2018, rating:3.5, review:"Bon rewatch d'avion ça" },
+  { profile:"Berries", title:"Sense and Sensibility", fr:"Raison et Sentiments", year:1995, rating:3.5, review:"All of this for good for nothing men" },
+  { profile:"Berries", title:"The Great Arch", year:2025, rating:3.5, review:"What France does to a mf" },
+  { profile:"Berries", title:"27 Dresses", year:2008, rating:3.5, review:"Tout ça pour un mec qui tombe à court de chaussettes propres" },
+  { profile:"Berries", title:"Sleepover", year:2004, rating:3, review:"Me too girl, my hobby is also hot dogs" },
+  { profile:"Berries", title:"The Lady Eve", fr:"Un cœur pris au piège", year:1941, rating:3.5, review:"She's so crazy I love her" },
+  { profile:"Berries", title:"Twilight", year:2008, rating:3, review:"Mais c'est tellement plus cringe sur grand écran, et tellement plus drôle" },
+  { profile:"Berries", title:"My Fair Lady", year:1964, rating:2.5, review:"Les 2 étoiles et demie sont seulement pour Audrey Hepburn et ses robes" },
+  { profile:"Berries", title:"Brazil", year:1985, rating:3.5, review:"\"Disons un pub Lancôme\" - Adrien Also I want the coquette coffin" },
+  { profile:"Berries", title:"What a Way to Go!", year:1964, rating:4, review:"That backless dress is the reason I wanted to watch that movie.. worth it" },
+  { profile:"Berries", title:"Thelma & Louise", year:1991, rating:5, review:"I support women's wrong and fck them men" },
+  { profile:"Berries", title:"When Harry Met Sally...", fr:"Quand Harry rencontre Sally", year:1989, rating:2.5, review:"I couldn't care less about their love story" },
+  { profile:"Berries", title:"Funny Face", fr:"Drôle de frimousse", year:1957, rating:3.5, review:"Si audrey hepburn a une funny face peut-être que moi j'ai une troll face dans ce cas" },
+  { profile:"Berries", title:"Gentlemen Prefer Blondes", fr:"Les hommes préfèrent les blondes", year:1953, rating:4, review:"J'ai les même sourcils que Marilyn en fait" },
+  { profile:"Berries", title:"The Wizard of Oz", fr:"Le Magicien d'Oz", year:1939, rating:4, review:"Maybe the real treasure was the friends we made along the way ©Alex" },
+  { profile:"Berries", title:"The Lizzie McGuire Movie", year:2003, rating:3.5, review:"Planning a trip to italy after this" },
+  { profile:"Berries", title:"The Young Girls of Rochefort", fr:"Les Demoiselles de Rochefort", year:1967, rating:5, review:"Je veux tous les outfits" },
+  { profile:"Berries", title:"Donkey Skin", fr:"Peau d'âne", year:1970, rating:4, review:"PREPAREZ VOTRE, PREPAREZ VOTRE PATE" },
+  { profile:"Berries", title:"Requiem for a Dream", year:2000, rating:4, review:"After watching this movie if someone ask me if I ever got high in my life i'll just say yes" },
+  { profile:"Berries", title:"The Fall", year:2019, rating:3.5, review:"Ça tombe" },
+  { profile:"Berries", title:"The Room Next Door", year:2024, rating:4, review:"Colors 🤌" },
+  { profile:"Berries", title:"Vertigo", fr:"Sueurs froides", year:1958, rating:4, review:"I was angry the last 30 minutes" },
+  { profile:"Berries", title:"Shrek 2", year:2004, rating:4, review:"Ma gazelle en miel" },
+  { profile:"Berries", title:"Beau Is Afraid", year:2023, rating:2.5, review:"Very not coquette" },
+  { profile:"Berries", title:"Before Sunrise", year:1995, rating:3.5, review:"Maybe I should take the train more more often 3,75 en vrai" },
+  { profile:"Berries", title:"(500) Days of Summer", fr:"500 jours ensemble", year:2009, rating:3.5, review:"Are u fucking kidding me Are u saying I'm supposed to have a heartbreak to go back to architecture ?" },
+  { profile:"Berries", title:"Eternal Sunshine of the Spotless Mind", year:2004, rating:4, review:"If only I were this straightforward" },
+  { profile:"Berries", title:"American Psycho", year:2000, rating:3.5, review:"okay, not gatekeeping the skincare routine, go off king" },
+  { profile:"Berries", title:"Uncut Gems", year:2019, rating:3, review:"Omg can we stop screaming for like 5 seconds" },
+  { profile:"Berries", title:"Nosferatu", year:2024, rating:4, review:"Me when" },
+  { profile:"Berries", title:"Slumdog Millionaire", year:2008, rating:4, review:"Dev Patel" },
+  { profile:"Berries", title:"The Fall Guy", year:2024, rating:3.5, review:"🤘" },
+  { profile:"Berries", title:"Our Little Sister", year:2015, rating:4.5, review:"I liked the vibes sooo much I want to live there with them too" },
+  { profile:"Berries", title:"Kabhi Khushi Kabhie Gham", year:2001, rating:4, review:"BOLE CHUDIYAAAAN BOLE KANGNAAA" },
+  { profile:"Berries", title:"Some Like It Hot", fr:"Certains l'aiment chaud", year:1959, rating:4, review:"I must go to Florida" },
+  { profile:"Berries", title:"Mulholland Drive", year:2001, rating:3.5, review:"I'll probably rate this movie better when i'll understand what the f is going on" },
+  { profile:"Berries", title:"Scent of a Woman", year:1992, rating:4, review:"Why is this movie 2h30 Well it was fun to watch though" },
+  { profile:"Berries", title:"Fight Club", year:1999, rating:4, review:"I never want to watch that movie again" },
+  { profile:"Berries", title:"The Shape of Water", fr:"La Forme de l'eau", year:2017, rating:3.5, review:"When men are so disappointing you have to find a fish" },
+  { profile:"Berries", title:"The Breakfast Club", year:1985, rating:3.5, review:"I love gossips" },
+  { profile:"Berries", title:"Soul", year:2020, rating:5, review:"Not sure what my sparks is, but I love being alive" },
+  { profile:"Berries", title:"Columbus", year:2017, rating:3.5, review:"As someone who got an architecture degree, I can tell you architecture sure does not heal" },
+  { profile:"Berries", title:"My Life as a Zucchini", fr:"Ma vie de Courgette", year:2016, rating:4.5, review:"Did I just cry over someone named Courgette" },
+  { profile:"Berries", title:"Lemonade Mouth", year:2011, rating:3.5, review:"Ce film m'a fait croire que je pouvais monter un groupe avec mes potes et finir au madison square garden" },
+  { profile:"Berries", title:"After Yang", year:2021, rating:4, review:"I love the house" },
+  { profile:"Berries", title:"Everything Everywhere All at Once", year:2022, rating:4.5, review:"I hope I slay in every universe too" },
+  { profile:"Berries", title:"Asteroid City", year:2023, rating:4, review:"wtf did I just watch" },
+  { profile:"Berries", title:"Mirai", fr:"Mirai, ma petite sœur", year:2018, rating:4, review:"That was cute Also the house is AWESOME I want to live there" },
+  { profile:"Berries", title:"Howl's Moving Castle", fr:"Le Château ambulant", year:2004, rating:5, review:"My very first ghibli, will always have a special place in my heart" },
+  { profile:"Berries", title:"Your Name.", year:2016, rating:5, review:"C'est la 3ième fois que je le regarde et je m'en lasse pas. Toujours aussi émouvant" },
+  { profile:"Berries", title:"The Princess Diaries", fr:"Princesse malgré elle", year:2001, rating:3, review:"Me when ? Also curly hair is not unprofessional please ugh" },
+  { profile:"Berries", title:"Parthenope", year:2024, rating:3, review:"Jsp hein" },
+  { profile:"Berries", title:"Life Is Beautiful", year:1997, rating:4, review:"Bah c'était horrible 🥲" },
+  { profile:"Alex", title:"Rocky Aur Rani Kii Prem Kahaani", year:2023, rating:3.5, review:"still can't choose a favorite line from this" },
+  { profile:"Alex", title:"There Is No Evil", year:2020, rating:4, review:"I'm so sad" },
+  { profile:"Alex", title:"Tattoo", year:2019, rating:4, review:"je veux tout casser" },
+  { profile:"Alex", title:"A Girl's Story", year:2026, rating:3, review:"La ménopause est voisine de la mort — pfiouuuu c'était trop" },
+  { profile:"Alex", title:"A Man of His Time", year:2026, rating:2, review:"la caméra pfiou peut être qu'on est dans Tellement Vrai" },
+  { profile:"Alex", title:"Jim Queen", year:2026, rating:3.5, review:"pfiouuuuuuuu" },
+  { profile:"Alex", title:"Another Day", year:2026, rating:3, review:"attention au jumpscare Macron" },
+  { profile:"Alex", title:"The Man with a Thousand Faces", year:2024, rating:3, review:"J'ai besoin de savoir s'il a vu le docu" },
+  { profile:"Alex", title:"The Lighthouse", year:2019, rating:4, review:"Un film qui mélange la psy jungienne + la mythologie grecque, jamais cru que je verrais ça un jour" },
+  { profile:"Alex", title:"The Father", year:2020, rating:5, review:"Ce film m'a brisé le cœur du début à la fin, le thème de l'oubli me touche tellement pour diverses raisons sans surprises j'ai grave pleuré. Je regarde des films avec Anthony Hopkins depuis vraiment très jeune, il est toujours aussi incroyable très peu lui arrivent à la cheville" },
+  { profile:"Alex", title:"Luca", year:2021, rating:4, review:"Si seulement les italiens étaient réels, ils ont l'air fun" },
+  { profile:"Alex", title:"Green Room", year:2015, rating:3, review:"the room wasn't THAT green tbh" },
+  { profile:"Alex", title:"Another Round", year:2020, rating:3.5, review:"Maybe they should've microdosed on Flintstone vitamins instead" },
+  { profile:"Alex", title:"The Killing of a Sacred Deer", fr:"Mise à mort du cerf sacré", year:2017, rating:4, review:"Lanthimos just lanthimosing again and as always phew" },
+  { profile:"Alex", title:"Nobody Knows", year:2004, rating:4.5, review:"Je suis si triste. C'est même pas une tristesse dramatique propre a beaucoup beaucoup de films, Kore-ada a réussi à me briser le coeur fissure par fissure, morceau par morceau" },
+  { profile:"Alex", title:"Cure", year:1997, rating:3.5, review:"Sincèrement le principe était super nice, peut être que c'est à cause du fait que j'en sais trop sur le sujet que j'étais bloqué sur le trop d'impossibilités qui émanait de quasi tout?? jsp sincèrement mais trql ça se regarde, c'est sympa, jai bien aimé" },
+  { profile:"Alex", title:"WALL·E", year:2008, rating:5, review:"best boi doing his liddol boi job" },
+  { profile:"Alex", title:"Taxi Driver", year:1976, rating:3, review:"Sorry film bros…. I can't be part of y'all 😔 (definitely De Niro at his peak tho)" },
+  { profile:"Alex", title:"Spencer", year:2021, rating:4.5, review:"I loved it SO much for reasons I don't even know if I could explain. In the right mood I would've easily shed at least one tear cause of how beautiful the entire build up is, she is so so very sad. Kristen Stewart's performance was amazing, I loved every single second of it. I think I genuinely slowly fell more and more in love with the movie the more it went" },
+  { profile:"Alex", title:"A Girl Walks Home Alone at Night", year:2014, rating:2.5, review:"maybe all I need in life is a sad feminist vampire skater girlfriend with a fat cat and great music tastes" },
+  { profile:"Alex", title:"The Shape of Water", fr:"La Forme de l'eau", year:2017, rating:3.5, review:"the speed at which she peeled that egg was more unrealistic than the fish mutant man" },
+  { profile:"Alex", title:"Hard Candy", year:2005, rating:3.5, review:"no one ate any candy jokes aside this was a crazy performance from Page phew" },
+  { profile:"Coton", title:"Alter Ego", year:2026, rating:2, review:"Mais qu'est-ce que j'ai vu" },
+  { profile:"Coton", title:"American Psycho", year:2000, rating:3, review:"Franchement j'ai pas grand chose de sympa à dire sur ce film. Juste une énième histoire de taré qui perd la tête et déteste les femmes. Nothing new" },
+  { profile:"Coton", title:"BTS THE COMEBACK LIVE | ARIRANG", year:2026, rating:4.5, review:"Et voilà maintenant j'ai trop le seum de pas avoir de place pour les voir, cet album c'est ma DA" },
+  { profile:"Coton", title:"Avatar: Fire and Ash", year:2025, rating:3.5, review:"C'est bien la 1ere fois que je vois un film avoir des chutes de fps ptdrrr" },
+  { profile:"Coton", title:"A House of Dynamite", year:2025, rating:3, review:"Franchement c'est le genre de films super dur à noter parce qu'on nous raconte pas vraiment une histoire. Et aussi que malgré tous les efforts fournis, ça reste très américain" },
+  { profile:"Coton", title:"Mamma Mia!", year:2008, rating:4.5, review:"Je l'ai vu avec un projecteur à 10 balles en version québécoise entourée de gens cool et franchement, l'expérience n'en était que meilleure" },
+  { profile:"Coton", title:"Zootopia 2", fr:"Zootopie 2", year:2025, rating:4, review:"A zoo-oo-oo" },
+  { profile:"Coton", title:"Kill Bill: Vol. 2", year:2004, rating:3.5, review:"Bill était INSUPPORTABLE mais faite le taire purée" },
+  { profile:"Coton", title:"Dog 51", year:2025, rating:2, review:"En dehors des décors, c'était .. vraiment pas bon Le jeu, le scénario, la manière d'aborder la thématique, même des fois le rythme, nan c'est pas possible Et le développement de personnages c'est le pompon sur la Garonne, on partait sur une relation qui ressemblait plus à du père/fille, et on nous donne quoi ???" },
+  { profile:"Coton", title:"The Last Unicorn", year:1982, rating:5, review:"I'M ALIIIIIIIIIIVE" },
+  { profile:"Coton", title:"Tenet", year:2020, rating:4, review:"J'ai plus compris que prévu" },
+  { profile:"Coton", title:"Singin' in the Rain", fr:"Chantons sous la pluie", year:1952, rating:5, review:"À quel moment on a perdu la faculté de masteriser les films correctement ?" },
+  { profile:"Coton", title:"Thelma & Louise", year:1991, rating:4.5, review:"- Hello, Darryl ? - Oh Hello !! Raccroche - He knows." },
+  { profile:"Coton", title:"The Curious Case of Benjamin Button", fr:"L'Étrange Histoire de Benjamin Button", year:2008, rating:3.5, review:"Est-ce qu'il vous a dit qu'il avait été frappé 7 fois par la foudre ?" },
+  { profile:"Coton", title:"KPop Demon Hunters", year:2025, rating:3, review:"Tous les clichés y étaient, c'était rigolo" },
+  { profile:"Coton", title:"Sound of Metal", year:2019, rating:4.5, review:"Protégez-vous les tympans 🫵 Et si vous n'en avez déjà plus, it's okay" },
+  { profile:"Coton", title:"How to Make Millions Before Grandma Dies", year:2024, rating:5, review:"Il doit pas rester plus de 2% d'eau dans mon corps là" },
+  { profile:"Coton", title:"The Prestige", year:2006, rating:4.5, review:"Mihoyo being inspired by Nolan, that was the surprise of the day Abracadabra" },
+  { profile:"Coton", title:"Whiplash", year:2014, rating:3, review:"Il faut arrêter d'idolâtrer des professeurs violents manipulateurs excentriques et narcissiques sous prétexte qu'ils représentent une certaine execellence, c'est juste entretenir un mythe qui détruit la santé" },
+  { profile:"Coton", title:"Shaolin Soccer", year:2001, rating:4, review:"Je m'attendais à beaucoup de choses et j'ai quand même été surprise Le film prend directement 0,5 en VF" },
+  { profile:"Coton", title:"The Lost Daughter", year:2021, rating:4, review:"What a terrifying job to be a mother" },
+  { profile:"Coton", title:"Uncut Gems", year:2019, rating:2.5, review:"Why so loud" },
+  { profile:"Coton", title:"Bo Burnham: Inside", year:2021, rating:4, review:"Feeling quit anxious" },
+  { profile:"Coton", title:"The Fall", year:2019, rating:2.5, review:"Et PAF" },
+  { profile:"Coton", title:"Mulholland Drive", year:2001, rating:3.5, review:"I don't really know what to feel about this It was somehow not understadable but somehow good idk Feels like we're between the 2,5 and the 4 stars" },
+  { profile:"Coton", title:"The Green Mile", fr:"La Ligne verte", year:1999, rating:5, review:"Plus jamais C'était génial mais plus jamais jamais jamais" },
+  { profile:"Coton", title:"Nosferatu", year:2024, rating:3.5, review:"Il y a pas de trous dans la table de billard" },
+  { profile:"Coton", title:"Still Walking", year:2008, rating:4, review:"Je n'ai pas regardé un film, j'ai été spectatrice d'un moment de vie" },
+  { profile:"Coton", title:"Spider-Man: Into the Spider-Verse", fr:"Spider-Man: New Generation", year:2018, rating:4.5, review:"PETER PORKER" },
+  { profile:"Coton", title:"A Bride for Rip Van Winkle", year:2016, rating:4.5, review:"Un film auquel je penserai, allongée en fixant mon plafond des yeux et qui me refera pleurer encore et encore" },
+  { profile:"Coton", title:"The Silence of the Lambs", fr:"Le Silence des agneaux", year:1991, rating:0, review:"Non." },
+  { profile:"Coton", title:"Frozen II", fr:"La Reine des Neiges 2", year:2019, rating:5, review:"Nobody's doing it like Disney does" },
+  { profile:"Coton", title:"The Grand Budapest Hotel", year:2014, rating:5, review:"Les plans sont trop fun" },
+  { profile:"Coton", title:"About Time", year:2013, rating:4.5, review:"C'était pas seulement des pleurs, c'était des SANGLOTS LÀ" },
+  { profile:"Coton", title:"I Saw the Devil", year:2010, rating:2, review:"TW Vic ||Un supplice du début à la fin, je juge TOUTES les bonnes notes vraiment Je comprends pas comment on peut aimer ce genre de film c'est insoutenable||" },
+  { profile:"Coton", title:"There Will Be Blood", year:2007, rating:0, review:"J'étais pas dedans + pas le bon mood pour ce film" },
+  { profile:"Coton", title:"Like Father, Like Son", year:2013, rating:4.5, review:"Comment ça, 100% des parents prennent cette décision wtf" },
+  { profile:"Coton", title:"Inside Out 2", fr:"Vice-Versa 2", year:2024, rating:4, review:"Ils ont bien failli m'avoir purée" },
+  { profile:"Coton", title:"The Fall Guy", year:2024, rating:4, review:"Je m'attendais pas à voir Chloé manier le katana dans le film" },
+  { profile:"Coton", title:"Donnie Darko", year:2001, rating:4.5, review:"C'est une boucle temporelle :)" },
+  { profile:"Coton", title:"The Boy and the Heron", fr:"Le Garçon et le Héron", year:2023, rating:4.5, review:"\"Mahito, ça veut dire homme de vérité C'est pour ça que tu pues la mort" },
+  { profile:"Coton", title:"Howl's Moving Castle", fr:"Le Château ambulant", year:2004, rating:5, review:"Tu n'es peut-être qu'un navet mais je t'aime bien quand même. Sois heureux, mon ami !" },
+  { profile:"Coton", title:"Midsommar", year:2019, rating:4, review:"J'étais de mauvais foi. Bravo. Le film a réussi son coup. Félicitation. Sourcils froncés." },
+
+  { profile:"Alex", title:"Chungking Express", year:1994, rating:2, review:"California dreamin'~~~ 🎶 On such a winter's day~~~~ 🎶" },
+  { profile:"Alex", title:"Fantastic Planet", fr:"La Planète sauvage", year:1973, rating:3, review:"What i got from this is that ants will end up taking over the world and I know Bernard Werber agrees" },
+  { profile:"Alex", title:"I Saw the Devil", year:2010, rating:4, review:"A huge amount of love for movies that fuck with my sense of morality. Thank you for your service" },
+  { profile:"Alex", title:"About Elly", fr:"À propos d'Elly", year:2009, rating:3.5, review:"This is a Golshifteh Farahani stan account" },
+  { profile:"Alex", title:"Everything Everywhere All at Once", year:2022, rating:4.5, review:"In another life I would've really liked doing laundry and taxes with you. Ya'll were not kidding one bit this IS the best movie of the year omg. I hadn't felt this thrill when watching a movie in SO long it was too good. Also I can't believe I audibly laughed at ROCKS" },
+  { profile:"Alex", title:"Oldboy", year:2003, rating:4, review:"très désappointé d'avoir capté le twist avant l'annonce du twist. j'ai également google immédiatement pendant le film si Choi Minski a réellement mangé une pieuvre vivante et non pas du tout…. il en a mangé QUATRE pcq ils ont fait la scène QUATRE FOIS purée" },
+  { profile:"Alex", title:"Our Little Sister", year:2015, rating:3.5, review:"I want to be their sister too" },
+  { profile:"Alex", title:"Perfume: The Story of a Murderer", fr:"Le Parfum : Histoire d'un meurtrier", year:2006, rating:3, review:"On m'a dit qu'on voulait transformer mon odeur en sapin de voiture pcq je sens bon du coup je me suis évidemment senti obligé de revoir ce film" },
+  { profile:"Alex", title:"Blackfish", year:2013, rating:4, review:"fuck seaworld x30" },
+  { profile:"Alex", title:"Nope", year:2022, rating:3, review:"Étendre le linge dehors be like" },
+  { profile:"Alex", title:"12 Angry Men", fr:"Douze hommes en colère", year:1957, rating:3.5, review:"Il a grave besoin de se calmer François Bayrou là" },
+  { profile:"Alex", title:"Uncut Gems", year:2019, rating:4, review:"Yeah forget my very first score, I need to fight ten men to get all that adrenaline and stress out of my system" },
+  { profile:"Alex", title:"But I'm a Cheerleader", year:1999, rating:3.5, review:"at this point i'm on my way to become a walking reference for lesbian movies. i don't even do it on purpose" },
+  { profile:"Alex", title:"Guillermo del Toro's Pinocchio", fr:"Pinocchio par Guillermo del Toro", year:2022, rating:4, review:"I thought we would get \"it's a me, Pinocchio\" but what we had was actually tea and crumpets" },
+  { profile:"Alex", title:"28 Days Later", fr:"28 jours plus tard", year:2002, rating:2.5, review:"Première fois que je regarde un film tourné sur une freebox et avec une régie son qui se baladait avec les micros au fond de leur cul" },
+  { profile:"Alex", title:"Mommy", year:2014, rating:5, review:"That's like my 3rd or 4th watch at this point. it ALWAYS hits man, ALWAYS" },
+  { profile:"Alex", title:"The Devil Wears Prada", fr:"Le Diable s'habille en Prada", year:2006, rating:4, review:"Reshaped pop culture, I'm being so serious" },
+  { profile:"Alex", title:"Pitch Perfect", year:2012, rating:3.5, review:"De base je cherchais un tout autre film sur Netflix puis j'ai vu ça. Je suis faible" },
+  { profile:"Alex", title:"The Dark Knight", year:2008, rating:4, review:"Le fait que la ville est remplie de criminels mais qu'ils préfèrent essayer de tuer des full maires ou jsp quoi plutôt que capturer l'homme le plus riche à des kilomètres (qui en plus a une adresse connue) contre une rançon, ça me tabasse" },
+  { profile:"Alex", title:"Leila's Brothers", fr:"Les Frères Leila", year:2022, rating:4, review:"You who loves your husband more than your sons and your sons more than your only daughter. Burn the whole system to the ground and start over fr" },
+  { profile:"Alex", title:"Swiss Army Man", year:2016, rating:3, review:"Everyone should learn to let go of the burden of their lifeless fart bag to start living a happier life" },
+  { profile:"Alex", title:"Reality", year:2023, rating:3, review:"wishing we could've known more about miniature poneys. \"But you don't actually hate America, right ?\" \"I mean, yeah, I do. It's literally the worst thing to happen on the planet\" Mood tbh" },
+  { profile:"Alex", title:"Anatomy of a Fall", fr:"Anatomie d'une chute", year:2023, rating:4.5, review:"Who was in charge of making the gay man in red sound homophobic please" },
+  { profile:"Alex", title:"Killers of the Flower Moon", year:2023, rating:3, review:"Killers of my attention span" },
+  { profile:"Alex", title:"The Others", fr:"Les Autres", year:2001, rating:4, review:"How to have Nicole Kidman point a rifle at me" },
+  { profile:"Alex", title:"Monster", year:2023, rating:5, review:"Ici ça CHIALE" },
+  { profile:"Alex", title:"The Color Purple", fr:"La Couleur pourpre", year:2023, rating:4.5, review:"The woman next to me at the movies \"they seem to be very good friends\"" },
+  { profile:"Alex", title:"Volver", year:2006, rating:4, review:"it's so refreshing when men only have like 2 lines total in an entire movie" },
+  { profile:"Alex", title:"Under the Silver Lake", year:2018, rating:4, review:"Not a butt ass naked Andrew Garfield with just a shirt. Alright Winnie the Pooh" },
+  { profile:"Alex", title:"A Bride for Rip Van Winkle", year:2016, rating:4, review:"Can't believe how long I put off watching this cause I was too lazy to look at some guy named Rip trying to find a wife" },
+  { profile:"Alex", title:"The Meyerowitz Stories (New and Selected)", year:2017, rating:4, review:"I too would tell everyone I met Sigourney Weaver if I had met Sigourney Weaver" },
+  { profile:"Alex", title:"Mission: Impossible – Dead Reckoning", year:2023, rating:3, review:"ah oh non les russes veulent dominer le monde et une partie des méchants sont au Moyen Orient oh zuteuh oooh…. oh non…. oh zut" },
+  { profile:"Alex", title:"Chicago", year:2002, rating:4, review:"The crush I had on Zorro Catherine Zeta Jones is still well and alive in case anyone is wondering" },
+  { profile:"Alex", title:"Beetlejuice Beetlejuice", year:2024, rating:4.5, review:"I too would cast my hot wife as a sexy soul eater tbh" },
+  { profile:"Alex", title:"Alien: Romulus", year:2024, rating:3, review:"No one in their right mind would put the faith of humanity in British people's hands" },
+  { profile:"Alex", title:"Gladiator II", year:2024, rating:4, review:"call me father the way dad movies really do be having that juice" },
+  { profile:"Alex", title:"Suspiria", year:2018, rating:4, review:"God forbid women have hobbies" },
+  { profile:"Alex", title:"Edge of Tomorrow", year:2014, rating:4, review:"c'est une boucle temporelle" },
+  { profile:"Alex", title:"Nosferatu", year:2024, rating:4.5, review:"Why is the Count kindaaaaaa…. 😉" },
+  { profile:"Alex", title:"The Great Arch", year:2025, rating:3.5, review:"Comme quoi la paperasse française brise des vies depuis toujours" },
+  { profile:"Alex", title:"Moonstruck", fr:"Éclair de lune", year:1987, rating:3, review:"Old man sobbing out of confusion is hilarious" },
+  { profile:"Alex", title:"Shin Godzilla", year:2016, rating:3.5, review:"Me when Godzilla on screen: WOOOOOO Godzilla !!!!!! hi !!!!! Me when government on screen: booooh 👎🏼🍅" },
+  { profile:"Alex", title:"Skinamarink", year:2022, rating:1, review:"I was expecting nothing and my expectations have been perfectly met, thank you so much" },
+  { profile:"Alex", title:"Werckmeister Harmonies", fr:"Les Harmonies Werckmeister", year:2000, rating:4, review:"Sometimes the elephant sitting still is a whale" },
+  { profile:"Alex", title:"Obsession", year:2025, rating:4, review:"man who forced woman to like him: I'm a liddol sad, your feelings don't seem real :/" },
+  { profile:"Alex", title:"Naked", year:1993, rating:1, review:"wow edgy boy into philosophy, he's so edgy and different and no one understands him cause he knows so much about edgy shit" },
+];
+
+// ================= UTILITAIRES =================
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+// Pioche ROUNDS_COUNT indices pour un salon en évitant de repasser sur des
+// reviews déjà vues dans ce salon (usedIndices), tant qu'il en reste
+// d'inédites. Une fois le stock épuisé (ou insuffisant pour compléter la
+// manche), on réinitialise l'historique du salon et on repioche dedans -
+// donc jamais de répétition tant que tout n'a pas déjà été vu.
+function pickRoomOrder(usedIndices){
+  const used = new Set(usedIndices || []);
+  let unseen = shuffle([...CASES.keys()].filter(i => !used.has(i)));
+  let order;
+  let newUsed;
+  if(unseen.length >= ROUNDS_COUNT){
+    order = unseen.slice(0, ROUNDS_COUNT);
+    newUsed = [...used, ...order];
+  } else {
+    // Pas assez d'inédites : on prend tout ce qui reste, puis on
+    // réinitialise l'historique et on complète avec un tirage frais
+    // (sans redoubler dans la même manche).
+    const rest = ROUNDS_COUNT - unseen.length;
+    const fresh = shuffle([...CASES.keys()].filter(i => !unseen.includes(i))).slice(0, rest);
+    order = shuffle([...unseen, ...fresh]);
+    newUsed = [...order];
+  }
+  return { order, usedIndices: newUsed };
+}
+function starString(r){
+  const full = Math.floor(r);
+  const half = r % 1 !== 0;
+  return '★'.repeat(full) + (half ? '½' : '');
+}
+function normalize(s){
+  return s.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9\s]/g,'')
+    .replace(/^(the|le|la|les|l|a|an)\s+/,'')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+function levenshtein(a,b){
+  const m=a.length, n=b.length;
+  const dp = Array.from({length:m+1},()=>new Array(n+1).fill(0));
+  for(let i=0;i<=m;i++) dp[i][0]=i;
+  for(let j=0;j<=n;j++) dp[0][j]=j;
+  for(let i=1;i<=m;i++){
+    for(let j=1;j<=n;j++){
+      dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+    }
+  }
+  return dp[m][n];
+}
+function isCorrect(guess, title){
+  const g = normalize(guess);
+  const t = normalize(title);
+  if(!g) return false;
+  if(g === t) return true;
+  const tolerance = t.length > 8 ? 2 : 1;
+  if(levenshtein(g,t) <= tolerance) return true;
+
+  // Titres longs (plus de 4 mots) : on valide aussi la réponse si le
+  // joueur a correctement tapé au moins les 3 premiers mots du titre
+  // (dans l'ordre, avec une petite tolérance de frappe par mot),
+  // même s'il n'a pas retapé le titre en entier.
+  const tWords = t.split(' ').filter(Boolean);
+  const gWords = g.split(' ').filter(Boolean);
+  if(tWords.length > 4 && gWords.length >= 3){
+    const compareLen = Math.min(gWords.length, tWords.length);
+    let matched = 0;
+    for(let i=0; i<compareLen; i++){
+      const wt = tWords[i];
+      const wg = gWords[i];
+      const wTolerance = wt.length > 5 ? 1 : 0;
+      if(levenshtein(wg, wt) <= wTolerance) matched++;
+      else break; // les mots corrects doivent former le tout début du titre
+    }
+    if(matched >= 3) return true;
+  }
+  return false;
+}
+
+// Valide la réponse contre le titre anglais (celui affiché/stocké dans
+// CASES) et, s'il existe, contre le titre français du film (champ `fr`).
+function guessMatchesFilm(guess, c){
+  if(isCorrect(guess, c.title)) return true;
+  if(c.fr && isCorrect(guess, c.fr)) return true;
+  return false;
+}
+function keyify(s){ return s.replace(/\s+/g,'').toLowerCase(); }
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ================= ÉTAT GLOBAL =================
+let PSEUDO = '';
+
+// -------- ÉCRAN PSEUDO --------
+document.getElementById('pseudo-continue').addEventListener('click', () => {
+  const val = document.getElementById('pseudo-input').value.trim();
+  const err = document.getElementById('pseudo-error');
+  if(!val){ err.textContent = 'Entre un pseudo pour continuer.'; return; }
+  if(val.length > 20){ err.textContent = 'Pseudo trop long.'; return; }
+  err.textContent = '';
+  PSEUDO = val;
+  document.getElementById('subtitle').textContent = 'Bienvenue, ' + PSEUDO;
+  showScreen('screen-mode');
+});
+document.getElementById('pseudo-input').addEventListener('keydown', e => { if(e.key === 'Enter') document.getElementById('pseudo-continue').click(); });
+
+// -------- ÉCRAN MODE --------
+document.getElementById('mode-back-pseudo').addEventListener('click', () => showScreen('screen-pseudo'));
+document.getElementById('mode-solo').addEventListener('click', () => { initSolo(); showScreen('screen-solo'); });
+document.getElementById('mode-multi').addEventListener('click', () => {
+  if(!firebaseReady){
+    alert("Le multijoueur a besoin d'une connexion à la base en ligne, qui n'a pas pu être chargée (pas de réseau, ou script bloqué). Le mode solo reste disponible normalement.");
+    return;
+  }
+  showScreen('screen-mp-choice');
+});
+
+// ================= MODE SOLO (petites manches de 10 films) =================
+const SOLO_ROUNDS_COUNT = 10;
+let soloOrder = shuffle([...CASES.keys()]).slice(0, SOLO_ROUNDS_COUNT);
+let soloIdx = 0;
+let soloScore = 0;
+let soloStreak = 0;
+let soloHints = 0;
+let soloTitleSolved = false;
+let soloProfileSolved = false;
+let soloProfileLocked = false;
+let soloProfileAttempts = 0;
+
+const soloEl = {
+  score: document.getElementById('solo-score'),
+  streak: document.getElementById('solo-streak'),
+  progress: document.getElementById('solo-progress'),
+  caseId: document.getElementById('solo-case-id'),
+  stars: document.getElementById('solo-stars'),
+  review: document.getElementById('solo-review-text'),
+  titleBar: document.getElementById('solo-title-bar'),
+  form: document.getElementById('solo-guess-form'),
+  input: document.getElementById('solo-guess-input'),
+  hintBtn: document.getElementById('solo-hint-btn'),
+  nextBtn: document.getElementById('solo-next-btn'),
+  hintLine: document.getElementById('solo-hint-line'),
+  feedback: document.getElementById('solo-feedback'),
+  profileZone: document.getElementById('solo-profile-zone'),
+  profileGrid: document.getElementById('solo-profile-grid'),
+  profileFeedback: document.getElementById('solo-profile-feedback'),
+};
+
+function initSolo(){
+  soloOrder = shuffle([...CASES.keys()]).slice(0, SOLO_ROUNDS_COUNT);
+  soloIdx = 0; soloScore = 0; soloStreak = 0;
+  soloEl.score.textContent = 0; soloEl.streak.textContent = 0;
+  loadSoloCase();
+}
+function buildSoloProfileButtons(){
+  soloEl.profileGrid.innerHTML = '';
+  PROFILES.forEach(name => {
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'btn-profile'; btn.textContent = name;
+    btn.addEventListener('click', () => handleSoloProfileGuess(name, btn));
+    soloEl.profileGrid.appendChild(btn);
+  });
+}
+function loadSoloCase(){
+  soloTitleSolved = false; soloProfileSolved = false; soloProfileLocked = false; soloHints = 0; soloProfileAttempts = 0;
+  const c = CASES[soloOrder[soloIdx]];
+  soloEl.caseId.textContent = `N°${String(soloIdx+1).padStart(3,'0')}`;
+  soloEl.stars.textContent = starString(c.rating);
+  soloEl.review.textContent = c.review;
+  soloEl.titleBar.textContent = '???';
+  soloEl.titleBar.className = 'title-placeholder';
+  soloEl.input.value = ''; soloEl.input.disabled = false;
+  soloEl.hintBtn.disabled = false;
+  soloEl.nextBtn.classList.remove('show');
+  soloEl.hintLine.textContent = ''; soloEl.feedback.textContent = ''; soloEl.feedback.className = 'feedback';
+  soloEl.progress.textContent = `${soloIdx+1}/${SOLO_ROUNDS_COUNT}`;
+  soloEl.profileZone.classList.remove('show'); soloEl.profileFeedback.textContent = '';
+  buildSoloProfileButtons();
+  soloEl.input.focus();
+}
+function soloRoundComplete(){
+  if(soloTitleSolved && soloProfileLocked){
+    soloEl.nextBtn.classList.add('show');
+    soloStreak = (soloTitleSolved && soloProfileSolved) ? soloStreak + 1 : 0;
+    soloEl.streak.textContent = soloStreak;
+  }
+}
+function trySoloGuess(){
+  if(soloTitleSolved) return;
+  const c = CASES[soloOrder[soloIdx]];
+  const guess = soloEl.input.value.trim();
+  if(!guess) return;
+  if(guessMatchesFilm(guess, c)){
+    soloTitleSolved = true;
+    const gained = Math.max(20, 100 - soloHints*15);
+    soloScore += gained; soloEl.score.textContent = soloScore;
+    soloEl.titleBar.textContent = `${c.title} (${c.year})`;
+    soloEl.titleBar.className = 'title-revealed';
+    soloEl.feedback.textContent = `Film trouvé ! +${gained} points`;
+    soloEl.feedback.className = 'feedback ok';
+    soloEl.input.disabled = true; soloEl.hintBtn.disabled = true;
+    soloEl.profileZone.classList.add('show');
+    soloRoundComplete();
+  } else {
+    soloEl.feedback.textContent = 'Pas ce film-là. Retente ou prends un indice.';
+    soloEl.feedback.className = 'feedback bad';
+  }
+}
+// Validation robuste : on gère nous-mêmes le clic et la touche Entrée plutôt
+// que de dépendre uniquement du submit natif du formulaire.
+soloEl.form.addEventListener('submit', e => e.preventDefault());
+soloEl.form.querySelector('button[type=submit]').addEventListener('click', e => {
+  e.preventDefault();
+  trySoloGuess();
+});
+soloEl.input.addEventListener('keydown', e => {
+  if(e.key === 'Enter'){ e.preventDefault(); trySoloGuess(); }
+});
+function showSoloFinal(){
+  document.getElementById('solo-final-score').textContent = soloScore;
+  showScreen('screen-solo-final');
+}
+// Un seul point de contrôle pour avancer d'un film : que la manche ait été
+// trouvée, ratée ou passée, c'est ce bouton qui fait progresser l'index et
+// vérifie la fin de partie — ça évite toute divergence entre les chemins.
+soloEl.nextBtn.addEventListener('click', () => {
+  soloIdx += 1;
+  if(soloIdx >= SOLO_ROUNDS_COUNT){ showSoloFinal(); return; }
+  loadSoloCase();
+});
+document.getElementById('solo-skip-btn').addEventListener('click', () => {
+  if(soloTitleSolved && soloProfileLocked) return; // déjà résolu, rien à passer
+  soloStreak = 0; soloEl.streak.textContent = soloStreak;
+  const c = CASES[soloOrder[soloIdx]];
+  // Révèle la bonne réponse (film + auteur) sans attribuer de points, avant
+  // de laisser le joueur avancer via le bouton "suivant".
+  soloTitleSolved = true; soloProfileLocked = true; soloProfileSolved = false;
+  soloEl.titleBar.textContent = `${c.title} (${c.year})`;
+  soloEl.titleBar.className = 'title-revealed';
+  soloEl.input.disabled = true; soloEl.hintBtn.disabled = true;
+  soloEl.feedback.textContent = 'Passé — 0 point pour ce film.';
+  soloEl.feedback.className = 'feedback bad';
+  soloEl.profileZone.classList.add('show');
+  soloEl.profileGrid.innerHTML = '';
+  PROFILES.forEach(name => {
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'btn-profile' + (name === c.profile ? ' correct' : '');
+    btn.textContent = name;
+    btn.disabled = true;
+    soloEl.profileGrid.appendChild(btn);
+  });
+  soloEl.profileFeedback.textContent = `C'était ${c.profile}.`;
+  soloEl.profileFeedback.className = 'feedback bad';
+  soloEl.nextBtn.classList.add('show');
+});
+soloEl.hintBtn.addEventListener('click', () => {
+  const c = CASES[soloOrder[soloIdx]];
+  soloHints += 1;
+  if(soloHints === 1){ soloEl.hintLine.textContent = `Indice : sorti en ${c.year}`; }
+  else if(soloHints === 2){
+    const initials = c.title.split(' ').map(w => w[0] ? w[0].toUpperCase()+'.' : '').join(' ');
+    soloEl.hintLine.textContent = `Indice : sorti en ${c.year} · initiales "${initials}"`;
+  } else {
+    const lettersShown = Math.min(c.title.length, 3 + soloHints);
+    soloEl.hintLine.textContent = `Indice : sorti en ${c.year} · début "${c.title.slice(0,lettersShown)}…"`;
+  }
+  if(soloHints >= 3) soloEl.hintBtn.disabled = true;
+});
+function handleSoloProfileGuess(name, btn){
+  if(soloProfileLocked) return;
+  const c = CASES[soloOrder[soloIdx]];
+  const allButtons = soloEl.profileGrid.querySelectorAll('button');
+  if(name === c.profile){
+    soloProfileSolved = true; soloProfileLocked = true;
+    const gained = Math.max(10, 40 - soloProfileAttempts*10);
+    soloScore += gained; soloEl.score.textContent = soloScore;
+    btn.classList.add('correct'); allButtons.forEach(b => b.disabled = true);
+    soloEl.profileFeedback.textContent = `C'est bien ${c.profile} ! +${gained} points`;
+    soloEl.profileFeedback.className = 'feedback ok';
+  } else {
+    soloProfileAttempts += 1;
+    btn.classList.add('wrong'); btn.disabled = true;
+    soloEl.profileFeedback.textContent = 'Raté, essaie encore.';
+    soloEl.profileFeedback.className = 'feedback bad';
+    const remaining = [...allButtons].filter(b => !b.disabled);
+    if(remaining.length === 1){
+      soloProfileLocked = true; remaining[0].disabled = true; remaining[0].classList.add('correct');
+      soloEl.profileFeedback.textContent = `C'était ${c.profile} !`;
+      soloEl.profileFeedback.className = 'feedback bad';
+    }
+  }
+  soloRoundComplete();
+}
+document.getElementById('solo-quit').addEventListener('click', () => showScreen('screen-mode'));
+document.getElementById('solo-final-replay').addEventListener('click', () => { initSolo(); showScreen('screen-solo'); });
+document.getElementById('solo-final-menu').addEventListener('click', () => showScreen('screen-mode'));
+
+// ================= MODE MULTIJOUEUR =================
+const ROUNDS_COUNT = 10;
+const REVEAL_DURATION = 4000;
+const POLL_MS = 1000;
+
+let isHost = false;
+let pwKey = '';
+let pollTimer = null;
+let hostTimer = null;
+let mpTimerInterval = null;
+let mpRoundStartAt = 0;
+let mpLastRoundIndex = -1;
+let mpLastRoundStatus = '';
+let mpSubmitted = false;
+let mpTitleSolved = false;
+let mpProfileSolved = false;
+let mpHintsShown = 0;
+
+async function readRoom(){
+  try{ const r = await window.storage.get('room_'+pwKey, true); return r ? JSON.parse(r.value) : null; }
+  catch(e){ return null; }
+}
+async function writeRoom(obj){
+  try{ await window.storage.set('room_'+pwKey, JSON.stringify(obj), true); }
+  catch(e){ console.error('Erreur stockage salon', e); }
+}
+function stopAllTimers(){
+  if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+  if(hostTimer){ clearInterval(hostTimer); hostTimer = null; }
+  if(mpTimerInterval){ clearInterval(mpTimerInterval); mpTimerInterval = null; }
+}
+
+// -- Navigation --
+document.getElementById('mp-choice-back').addEventListener('click', () => showScreen('screen-mode'));
+document.getElementById('mp-choice-host').addEventListener('click', () => showScreen('screen-mp-host'));
+document.getElementById('mp-choice-join').addEventListener('click', () => showScreen('screen-mp-join'));
+document.getElementById('host-back').addEventListener('click', () => showScreen('screen-mp-choice'));
+document.getElementById('join-back').addEventListener('click', () => showScreen('screen-mp-choice'));
+
+// -- Créer un salon --
+document.getElementById('host-create').addEventListener('click', async () => {
+  const pwRaw = document.getElementById('host-pw').value.trim();
+  const err = document.getElementById('host-error');
+  if(!pwRaw){ err.textContent = 'Choisis un mot de passe.'; return; }
+  pwKey = keyify(pwRaw);
+  if(!pwKey){ err.textContent = 'Mot de passe invalide.'; return; }
+  const existing = await readRoom();
+  if(existing && existing.status !== 'finished'){
+    err.textContent = 'Ce mot de passe est déjà utilisé, choisis-en un autre.';
+    return;
+  }
+  err.textContent = '';
+  isHost = true;
+  const previousUsed = (existing && existing.status === 'finished') ? existing.usedIndices : [];
+  const { order, usedIndices } = pickRoomOrder(previousUsed);
+  const room = {
+    password: pwRaw,
+    host: PSEUDO,
+    status: 'lobby',
+    players: [PSEUDO],
+    scores: { [PSEUDO]: 0 },
+    order,
+    usedIndices,
+    session: 1,
+    roundIndex: -1,
+    roundStatus: '',
+    roundStartAt: 0,
+    roundWinner: null,
+    revealAt: 0,
+    createdAt: Date.now()
+  };
+  await writeRoom(room);
+  enterLobby();
+});
+
+// -- Rejoindre un salon --
+document.getElementById('join-enter').addEventListener('click', async () => {
+  const pwRaw = document.getElementById('join-pw').value.trim();
+  const err = document.getElementById('join-error');
+  if(!pwRaw){ err.textContent = 'Entre le mot de passe du salon.'; return; }
+  pwKey = keyify(pwRaw);
+  const room = await readRoom();
+  if(!room){ err.textContent = 'Salon introuvable.'; return; }
+  if(room.status !== 'lobby'){ err.textContent = 'La partie a déjà commencé.'; return; }
+  err.textContent = '';
+  if(!room.players.includes(PSEUDO)){
+    room.players.push(PSEUDO);
+    room.scores[PSEUDO] = 0;
+    await writeRoom(room);
+  }
+  isHost = false;
+  enterLobby();
+});
+
+// -- Lobby --
+function renderLobbyPlayers(players, scores, host){
+  const ul = document.getElementById('lobby-players');
+  ul.innerHTML = '';
+  players.forEach(p => {
+    const li = document.createElement('li');
+    if(p === PSEUDO) li.classList.add('you');
+    li.innerHTML = `<span>${p}${p === host ? ' (hôte)' : ''}</span><span class="pts">prêt</span>`;
+    ul.appendChild(li);
+  });
+}
+function enterLobby(){
+  showScreen('screen-mp-lobby');
+  stopAllTimers();
+  lobbyPoll();
+  pollTimer = setInterval(lobbyPoll, 1500);
+}
+async function lobbyPoll(){
+  const room = await readRoom();
+  if(!room) return;
+  renderLobbyPlayers(room.players, room.scores, room.host);
+  document.getElementById('lobby-host-controls').style.display = isHost ? 'block' : 'none';
+  document.getElementById('lobby-wait-msg').style.display = isHost ? 'none' : 'block';
+  if(room.status === 'playing'){
+    clearInterval(pollTimer); pollTimer = null;
+    enterMpGame();
+  }
+}
+document.getElementById('lobby-start').addEventListener('click', async () => {
+  const room = await readRoom();
+  if(!room) return;
+  room.status = 'playing';
+  room.roundIndex = 0;
+  room.roundStatus = 'active';
+  room.roundStartAt = Date.now();
+  room.roundWinner = null;
+  await writeRoom(room);
+  clearInterval(pollTimer); pollTimer = null;
+  enterMpGame();
+});
+document.getElementById('lobby-quit').addEventListener('click', () => {
+  stopAllTimers();
+  showScreen('screen-mp-choice');
+});
+
+// -- Partie multijoueur --
+const mpEl = {
+  miniScores: document.getElementById('mp-mini-scores'),
+  roundTag: document.getElementById('mp-round-tag'),
+  timer: document.getElementById('mp-timer'),
+  stars: document.getElementById('mp-stars'),
+  active: document.getElementById('mp-round-active'),
+  review: document.getElementById('mp-review-text'),
+  titleBar: document.getElementById('mp-title-bar'),
+  form: document.getElementById('mp-guess-form'),
+  input: document.getElementById('mp-guess-input'),
+  feedback: document.getElementById('mp-feedback'),
+  profileZone: document.getElementById('mp-profile-zone'),
+  profileGrid: document.getElementById('mp-profile-grid'),
+  profileFeedback: document.getElementById('mp-profile-feedback'),
+  hintLine: document.getElementById('mp-hint-line'),
+  reveal: document.getElementById('mp-round-reveal'),
+  winnerName: document.getElementById('mp-winner-name'),
+  winnerFilm: document.getElementById('mp-winner-film'),
+};
+
+function renderMiniScores(players, scores){
+  mpEl.miniScores.innerHTML = '';
+  players.slice().sort((a,b) => (scores[b]||0) - (scores[a]||0)).forEach(p => {
+    const span = document.createElement('span');
+    span.textContent = `${p} · ${scores[p]||0}`;
+    mpEl.miniScores.appendChild(span);
+  });
+}
+
+function enterMpGame(){
+  showScreen('screen-mp-game');
+  mpLastRoundIndex = -1; mpLastRoundStatus = '';
+  gamePoll();
+  pollTimer = setInterval(gamePoll, POLL_MS);
+  if(isHost){ hostTimer = setInterval(hostTick, 1200); }
+}
+
+async function gamePoll(){
+  const room = await readRoom();
+  if(!room) return;
+  renderMiniScores(room.players, room.scores);
+
+  if(room.status === 'finished'){
+    if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+    if(hostTimer){ clearInterval(hostTimer); hostTimer = null; }
+    if(mpTimerInterval){ clearInterval(mpTimerInterval); mpTimerInterval = null; }
+    enterFinalScreen(room);
+    return;
+  }
+  if(room.roundIndex !== mpLastRoundIndex || room.roundStatus !== mpLastRoundStatus){
+    mpLastRoundIndex = room.roundIndex;
+    mpLastRoundStatus = room.roundStatus;
+    if(room.roundStatus === 'active'){ loadMpRound(room); }
+    else if(room.roundStatus === 'reveal'){ showMpReveal(room); }
+  }
+}
+
+function loadMpRound(room){
+  mpSubmitted = false;
+  mpTitleSolved = false;
+  mpProfileSolved = false;
+  mpHintsShown = 0;
+  mpRoundStartAt = room.roundStartAt;
+  const c = CASES[room.order[room.roundIndex]];
+  mpEl.roundTag.textContent = `Manche ${room.roundIndex+1}/${ROUNDS_COUNT}`;
+  mpEl.stars.textContent = starString(c.rating);
+  mpEl.review.textContent = c.review;
+  mpEl.titleBar.textContent = '???';
+  mpEl.titleBar.className = 'title-placeholder';
+  mpEl.input.value = ''; mpEl.input.disabled = false;
+  document.getElementById('mp-idk-btn').disabled = false;
+  mpEl.feedback.textContent = ''; mpEl.feedback.className = 'feedback';
+  mpEl.hintLine.textContent = '';
+  // Les deux réponses (film et profil) sont visibles et jouables dès le
+  // départ, dans n'importe quel ordre.
+  mpEl.profileZone.classList.add('show'); mpEl.profileFeedback.textContent = '';
+  buildMpProfileButtons();
+  mpEl.active.style.display = 'block';
+  mpEl.reveal.style.display = 'none';
+  mpEl.input.focus();
+  if(mpTimerInterval) clearInterval(mpTimerInterval);
+  mpTimerInterval = setInterval(() => {
+    const elapsedMs = Date.now() - mpRoundStartAt;
+    const s = (elapsedMs / 1000).toFixed(1);
+    mpEl.timer.textContent = s + 's';
+    maybeShowMpHint(c, elapsedMs);
+  }, 100);
+}
+
+function maybeShowMpHint(c, elapsedMs){
+  if(mpTitleSolved) return; // plus la peine d'afficher des indices si déjà trouvé
+  if(mpHintsShown < 1 && elapsedMs >= 30000){
+    mpHintsShown = 1;
+    mpEl.hintLine.textContent = `Indice : sorti en ${c.year}`;
+  }
+  if(mpHintsShown < 2 && elapsedMs >= 45000){
+    mpHintsShown = 2;
+    const initials = c.title.split(' ').map(w => w[0] ? w[0].toUpperCase()+'.' : '').join(' ');
+    mpEl.hintLine.textContent = `Indice : sorti en ${c.year} · initiales "${initials}"`;
+  }
+  if(mpHintsShown < 3 && elapsedMs >= 60000){
+    mpHintsShown = 3;
+    const lettersShown = Math.min(c.title.length, 5);
+    mpEl.hintLine.textContent = `Indice : sorti en ${c.year} · début "${c.title.slice(0,lettersShown)}…"`;
+  }
+}
+
+function buildMpProfileButtons(){
+  mpEl.profileGrid.innerHTML = '';
+  PROFILES.forEach(name => {
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'btn-profile'; btn.textContent = name;
+    btn.addEventListener('click', () => handleMpProfileGuess(name, btn));
+    mpEl.profileGrid.appendChild(btn);
+  });
+}
+
+function tryMpGuess(){
+  if(mpEl.input.disabled || mpTitleSolved) return;
+  const guess = mpEl.input.value.trim();
+  if(!guess) return;
+  readRoom().then(room => {
+    if(!room || room.roundStatus !== 'active') return;
+    const c = CASES[room.order[room.roundIndex]];
+    if(guessMatchesFilm(guess, c)){
+      mpTitleSolved = true;
+      mpEl.titleBar.textContent = `${c.title} (${c.year})`;
+      mpEl.titleBar.className = 'title-revealed';
+      mpEl.feedback.textContent = mpProfileSolved ? 'Film trouvé !' : 'Film trouvé ! Et le profil ?';
+      mpEl.feedback.className = 'feedback ok';
+      mpEl.input.disabled = true;
+      maybeSubmitMpAnswer();
+    } else {
+      mpEl.feedback.textContent = 'Pas ce film-là, retente vite !';
+      mpEl.feedback.className = 'feedback bad';
+    }
+  });
+}
+// Validation robuste : clic direct sur le bouton + touche Entrée, sans dépendre
+// uniquement du submit natif du formulaire.
+mpEl.form.addEventListener('submit', e => e.preventDefault());
+mpEl.form.querySelector('button[type=submit]').addEventListener('click', e => {
+  e.preventDefault();
+  tryMpGuess();
+});
+mpEl.input.addEventListener('keydown', e => {
+  if(e.key === 'Enter'){ e.preventDefault(); tryMpGuess(); }
+});
+
+async function handleMpProfileGuess(name, btn){
+  if(mpProfileSolved || mpSubmitted) return;
+  const room = await readRoom();
+  if(!room || room.roundStatus !== 'active') return;
+  const c = CASES[room.order[room.roundIndex]];
+  const allButtons = mpEl.profileGrid.querySelectorAll('button');
+  if(name === c.profile){
+    mpProfileSolved = true;
+    allButtons.forEach(b => b.disabled = true);
+    btn.classList.add('correct');
+    mpEl.profileFeedback.textContent = mpTitleSolved ? 'Profil trouvé !' : 'Profil trouvé ! Et le film ?';
+    mpEl.profileFeedback.className = 'feedback ok';
+    maybeSubmitMpAnswer();
+  } else {
+    btn.classList.add('wrong'); btn.disabled = true;
+    mpEl.profileFeedback.textContent = 'Raté, essaie un autre nom.';
+    mpEl.profileFeedback.className = 'feedback bad';
+  }
+}
+
+// Envoie la réponse au salon seulement une fois que le film ET le profil
+// ont été trouvés, peu importe l'ordre dans lequel ils l'ont été.
+async function maybeSubmitMpAnswer(){
+  if(mpSubmitted || !mpTitleSolved || !mpProfileSolved) return;
+  mpSubmitted = true;
+  const room = await readRoom();
+  if(!room || room.roundStatus !== 'active') return;
+  document.getElementById('mp-idk-btn').disabled = true;
+  mpEl.profileGrid.querySelectorAll('button').forEach(b => b.disabled = true);
+  const elapsed = Date.now() - mpRoundStartAt;
+  try{
+    await window.storage.set(`submit_${pwKey}_${room.session}_${room.roundIndex}_${keyify(PSEUDO)}`, JSON.stringify({ name: PSEUDO, t: elapsed, pass:false }), true);
+  }catch(e){ console.error(e); }
+  mpEl.feedback.textContent = 'Réponse complète envoyée ✓ En attente des autres…';
+  mpEl.feedback.className = 'feedback ok';
+  mpEl.profileFeedback.textContent = 'Réponse complète envoyée ✓ En attente des autres…';
+  mpEl.profileFeedback.className = 'feedback ok';
+}
+
+async function handleMpIdk(){
+  if(mpSubmitted) return;
+  const room = await readRoom();
+  if(!room || room.roundStatus !== 'active') return;
+  mpSubmitted = true;
+  document.getElementById('mp-idk-btn').disabled = true;
+  mpEl.input.disabled = true;
+  mpEl.profileGrid.querySelectorAll('button').forEach(b => b.disabled = true);
+  const elapsed = Date.now() - mpRoundStartAt;
+  try{
+    await window.storage.set(`submit_${pwKey}_${room.session}_${room.roundIndex}_${keyify(PSEUDO)}`, JSON.stringify({ name: PSEUDO, t: elapsed, pass:true }), true);
+  }catch(e){ console.error(e); }
+  mpEl.feedback.textContent = 'Réponse passée, en attente des autres…';
+  mpEl.feedback.className = 'feedback';
+}
+document.getElementById('mp-idk-btn').addEventListener('click', handleMpIdk);
+
+function showMpReveal(room){
+  if(mpTimerInterval){ clearInterval(mpTimerInterval); mpTimerInterval = null; }
+  const c = CASES[room.order[room.roundIndex]];
+  mpEl.active.style.display = 'none';
+  mpEl.reveal.style.display = 'block';
+  if(room.roundWinner){
+    mpEl.winnerName.textContent = `🏆 ${room.roundWinner.name}`;
+  } else {
+    mpEl.winnerName.textContent = 'Personne n\'a trouvé à temps';
+  }
+  mpEl.winnerFilm.textContent = `${c.title} (${c.year}) — écrite par ${c.profile}`;
+}
+
+const ROUND_TIMEOUT = 75000;
+
+// -- Boucle d'arbitrage (hôte uniquement) --
+async function hostTick(){
+  const room = await readRoom();
+  if(!room || room.status !== 'playing') return;
+
+  if(room.roundStatus === 'active'){
+    const prefix = `submit_${pwKey}_${room.session}_${room.roundIndex}_`;
+    let list;
+    try{ list = await window.storage.list(prefix, true); }catch(e){ list = null; }
+    const subs = [];
+    if(list && list.keys){
+      for(const k of list.keys){
+        try{
+          const r = await window.storage.get(k, true);
+          if(r) subs.push(JSON.parse(r.value));
+        }catch(e){}
+      }
+    }
+    const corrects = subs.filter(s => !s.pass).sort((a,b) => a.t - b.t);
+    const respondedNames = new Set(subs.map(s => s.name));
+    const allResponded = room.players.length > 0 && room.players.every(p => respondedNames.has(p));
+    const timedOut = Date.now() - room.roundStartAt > ROUND_TIMEOUT;
+
+    // Un gagnant est déclaré dès qu'une bonne réponse arrive.
+    // Si personne n'a trouvé mais que tout le monde a répondu (ou passé),
+    // ou que le temps est écoulé, la manche se termine quand même :
+    // ça évite qu'une personne bloquée ne bloque toute la partie.
+    if(corrects.length > 0){
+      const winner = corrects[0];
+      room.scores[winner.name] = (room.scores[winner.name] || 0) + 100;
+      room.roundWinner = winner;
+      room.roundStatus = 'reveal';
+      room.revealAt = Date.now();
+      await writeRoom(room);
+    } else if(allResponded || timedOut){
+      room.roundWinner = null;
+      room.roundStatus = 'reveal';
+      room.revealAt = Date.now();
+      await writeRoom(room);
+    }
+    return;
+  }
+
+  if(room.roundStatus === 'reveal'){
+    if(Date.now() - (room.revealAt || 0) < REVEAL_DURATION) return;
+    const next = room.roundIndex + 1;
+    if(next >= ROUNDS_COUNT){
+      room.status = 'finished';
+      await writeRoom(room);
+    } else {
+      room.roundIndex = next;
+      room.roundStatus = 'active';
+      room.roundStartAt = Date.now();
+      room.roundWinner = null;
+      await writeRoom(room);
+    }
+  }
+}
+
+function renderFinal(room){
+  const ul = document.getElementById('final-players');
+  ul.innerHTML = '';
+  const ranked = room.players.slice().sort((a,b) => (room.scores[b]||0) - (room.scores[a]||0));
+  ranked.forEach((p, i) => {
+    const li = document.createElement('li');
+    if(i === 0) li.classList.add('leader');
+    if(p === PSEUDO) li.classList.add('you');
+    li.innerHTML = `<span>${i+1}. ${p}</span><span class="pts">${room.scores[p]||0} pts</span>`;
+    ul.appendChild(li);
+  });
+}
+
+function enterFinalScreen(room){
+  renderFinal(room);
+  document.getElementById('final-host-controls').style.display = isHost ? 'block' : 'none';
+  document.getElementById('final-wait-msg').style.display = isHost ? 'none' : 'block';
+  showScreen('screen-mp-final');
+  pollTimer = setInterval(finalPoll, 1500);
+}
+
+async function finalPoll(){
+  const room = await readRoom();
+  if(!room) return;
+  if(room.status === 'playing'){
+    clearInterval(pollTimer); pollTimer = null;
+    enterMpGame();
+  } else {
+    renderFinal(room);
+  }
+}
+
+document.getElementById('final-replay-same').addEventListener('click', async () => {
+  const room = await readRoom();
+  if(!room) return;
+  const { order, usedIndices } = pickRoomOrder(room.usedIndices);
+  room.order = order;
+  room.usedIndices = usedIndices;
+  room.session = (room.session || 1) + 1;
+  room.roundIndex = 0;
+  room.roundStatus = 'active';
+  room.roundStartAt = Date.now();
+  room.roundWinner = null;
+  room.players.forEach(p => { room.scores[p] = 0; });
+  room.status = 'playing';
+  await writeRoom(room);
+  if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+  enterMpGame();
+});
+
+document.getElementById('final-replay').addEventListener('click', () => {
+  stopAllTimers();
+  isHost = false; pwKey = '';
+  showScreen('screen-mode');
+});
+document.getElementById('mp-quit').addEventListener('click', () => {
+  stopAllTimers();
+  isHost = false; pwKey = '';
+  showScreen('screen-mode');
+});
+
+// ================= NOTE : RÈGLES DE SÉCURITÉ FIREBASE =================
+// Le jeu est maintenant branché sur Firebase Realtime Database (voir en haut
+// de ce script) : n'importe qui, sur n'importe quel navigateur, peut créer
+// ou rejoindre un salon avec un mot de passe et jouer en temps réel.
+//
+// Pour que ça fonctionne, la base doit autoriser la lecture/écriture sur le
+// nœud "lmlb". Dans la console Firebase > Realtime Database > Règles,
+// mets par exemple :
+//
+// {
+//   "rules": {
+//     "lmlb": {
+//       ".read": true,
+//       ".write": true
+//     },
+//     "$other": {
+//       ".read": false,
+//       ".write": false
+//     }
+//   }
+// }
+//
+// Le mode "test" par défaut de Firebase (lecture/écriture ouvertes puis
+// expiration au bout de 30 jours) fonctionne aussi pour commencer, mais
+// pense à passer sur la règle ci-dessus (limitée au nœud "lmlb") pour que
+// ça ne s'arrête pas tout seul et que le reste de ta base reste protégé.
+// Comme il n'y a pas d'authentification, ces règles restent ouvertes à
+// quiconque connaît l'URL du jeu : largement suffisant pour jouer entre
+// potes, mais à garder en tête si tu comptes le partager plus largement.
+</script>
+</body>
+</html>
