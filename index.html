@@ -381,19 +381,7 @@
 </footer>
 
 <script type="module">
-// ================= STOCKAGE PARTAGÉ EN LIGNE (FIREBASE) =================
-// window.storage est l'API utilisée par tout le reste du jeu (get/set/delete/list).
-// Elle est ici branchée sur Firebase Realtime Database : toutes les parties
-// (lobby, manches, scores, buzzers) passent par une vraie base en ligne,
-// donc plusieurs joueurs sur des navigateurs / appareils différents partout
-// dans le monde peuvent jouer ensemble en temps réel.
-// IMPORTANT : ces imports Firebase se chargent depuis un CDN externe. S'ils
-// échouent (pas de réseau, adblocker, ouverture du fichier en local, CDN
-// bloqué...), un `import` statique en haut d'un script planterait TOUT le
-// module et aucun bouton du jeu ne répondrait plus, même en mode solo.
-// On charge donc Firebase dynamiquement et on intercepte l'échec : le mode
-// solo (qui n'a pas besoin de réseau) continue de fonctionner normalement,
-// et seul le multijoueur signale clairement le problème.
+
 let getDatabase, ref, dbGet, dbSet, dbRemove, query, orderByKey, startAt, endAt, db;
 let firebaseReady = false;
 
@@ -1662,35 +1650,6 @@ document.getElementById('mp-quit').addEventListener('click', () => {
   showScreen('screen-mode');
 });
 
-// ================= NOTE : RÈGLES DE SÉCURITÉ FIREBASE =================
-// Le jeu est maintenant branché sur Firebase Realtime Database (voir en haut
-// de ce script) : n'importe qui, sur n'importe quel navigateur, peut créer
-// ou rejoindre un salon avec un mot de passe et jouer en temps réel.
-//
-// Pour que ça fonctionne, la base doit autoriser la lecture/écriture sur le
-// nœud "lmlb". Dans la console Firebase > Realtime Database > Règles,
-// mets par exemple :
-//
-// {
-//   "rules": {
-//     "lmlb": {
-//       ".read": true,
-//       ".write": true
-//     },
-//     "$other": {
-//       ".read": false,
-//       ".write": false
-//     }
-//   }
-// }
-//
-// Le mode "test" par défaut de Firebase (lecture/écriture ouvertes puis
-// expiration au bout de 30 jours) fonctionne aussi pour commencer, mais
-// pense à passer sur la règle ci-dessus (limitée au nœud "lmlb") pour que
-// ça ne s'arrête pas tout seul et que le reste de ta base reste protégé.
-// Comme il n'y a pas d'authentification, ces règles restent ouvertes à
-// quiconque connaît l'URL du jeu : largement suffisant pour jouer entre
-// potes, mais à garder en tête si tu comptes le partager plus largement.
 </script>
 </body>
 </html>
